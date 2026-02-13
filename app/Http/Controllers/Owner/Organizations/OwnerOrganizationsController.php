@@ -44,10 +44,19 @@ class OwnerOrganizationsController extends Controller
                     'trial_ends_at' => $o->trial_ends_at?->toDateTimeString(),
                     'paid_until' => $o->paid_until?->toDateTimeString(),
                     'created_at' => $o->created_at->toDateTimeString(),
+                    'brand_email' => $o->brand_email,
+                    'brand_logo_path' => $o->brand_logo_path ? asset('storage/' . $o->brand_logo_path) : null,
                 ];
             });
 
-        $plans = Plan::query()->orderBy('id')->get(['id','key','name']);
+        $plans = Plan::query()->orderBy('id')->get(['id', 'key', 'name']);
+
+        $metrics = [
+            'total' => Organization::count(),
+            'active' => Organization::where('subscription_status', 'active')->count(),
+            'trial' => Organization::where('subscription_status', 'trial')->count(),
+            'expired' => Organization::whereIn('subscription_status', ['past_due', 'suspended', 'expired'])->count(),
+        ];
 
         return Inertia::render('Owner/Organizations/Index', [
             'filters' => [
@@ -57,6 +66,7 @@ class OwnerOrganizationsController extends Controller
             ],
             'plans' => $plans,
             'organizations' => $orgs,
+            'metrics' => $metrics,
         ]);
     }
 
@@ -75,36 +85,89 @@ class OwnerOrganizationsController extends Controller
             ->orderByDesc('id')
             ->first();
 
-        $payments = Payment::where('organization_id', $organization->id)
-            ->orderByDesc('id')
-            ->paginate(10)
-            ->withQueryString()
-            ->through(fn($p) => [
-                'id' => $p->id,
-                'reference' => $p->reference,
-                'status' => $p->status,
-                'amount_kobo' => (int)$p->amount_cents,
-                'currency' => $p->currency,
-                'created_at' => $p->created_at->toDateTimeString(),
-            ]);
+        // Unified Timeline Query
+        // We select common columns: id, type (formatted), content, admin_name, admin_avatar, created_at
+        // This avoids N+1 and massive payloads
 
-        // Audit logs for this org
-        $audit = \App\Models\AdminAuditLog::query()
+        $orgId = $organization->id;
+
+        $notesQuery = \Illuminate\Support\Facades\DB::table('organization_notes')
+            ->selectRaw("
+                id, 
+                type as activity_type, 
+                content as description, 
+                created_at, 
+                admin_id, 
+                'note' as source_table
+            ")
+            ->where('organization_id', $orgId);
+
+        $auditsQuery = \Illuminate\Support\Facades\DB::table('admin_audit_logs')
+            ->selectRaw("
+                id, 
+                'system' as activity_type, 
+                CONCAT(action, ': ', IFNULL(reason, '')) as description, 
+                created_at, 
+                admin_id, 
+                'audit' as source_table
+            ")
             ->where('subject_type', 'Organization')
-            ->where('subject_id', $organization->id)
-            ->with('admin:id,name,email')
-            ->orderByDesc('id')
-            ->paginate(10)
-            ->withQueryString()
-            ->through(fn($l) => [
-                'id' => $l->id,
-                'action' => $l->action,
-                'admin' => $l->admin ? ['name' => $l->admin->name, 'email' => $l->admin->email] : null,
-                'reason' => $l->reason,
-                'created_at' => $l->created_at->toDateTimeString(),
+            ->where('subject_id', $orgId);
+
+        $paymentsQuery = \Illuminate\Support\Facades\DB::table('payments')
+            ->selectRaw("
+                id, 
+                'system' as activity_type, 
+                CONCAT('Payment ', status, ': ', currency, ' ', amount_cents / 100) as description, 
+                created_at, 
+                NULL as admin_id, 
+                'payment' as source_table
+            ")
+            ->where('organization_id', $orgId);
+
+        $timeline = $notesQuery
+            ->union($auditsQuery)
+            ->union($paymentsQuery)
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        // Pivot to load admin details efficiently
+        $adminIds = collect($timeline->items())->pluck('admin_id')->filter()->unique();
+        $admins = \App\Models\Admin::whereIn('id', $adminIds)->get()->keyBy('id');
+
+        // Transform for frontend
+        $timeline->getCollection()->transform(function ($item) use ($admins) {
+            $admin = $item->admin_id ? $admins->get($item->admin_id) : null;
+            return [
+                'id' => $item->source_table . '-' . $item->id, // Unique key
+                'type' => $item->activity_type,
+                'content' => $item->description,
+                'created_at' => \Carbon\Carbon::parse($item->created_at)->toDateTimeString(),
+                'admin' => $admin ? [
+                    'name' => $admin->name,
+                    'avatar_url' => $admin->avatar_path ? asset('storage/' . $admin->avatar_path) : null,
+                ] : ['name' => 'System'],
+            ];
+        });
+
+        // Tasks (kept separate as they are a sidebar operational list)
+        $tasks = $organization->crmTasks()
+            ->whereNull('completed_at')
+            ->with(['assignee:id,name,avatar_path', 'creator:id,name'])
+            ->get()
+            ->map(fn($t) => [
+                'id' => $t->id,
+                'content' => $t->content,
+                'due_at' => $t->due_at?->toDateTimeString(),
+                'assigned_to' => $t->assignee ? [
+                    'id' => $t->assignee->id,
+                    'name' => $t->assignee->name,
+                    'avatar_url' => $t->assignee->avatar_path ? asset('storage/' . $t->assignee->avatar_path) : null,
+                ] : null,
+                'created_by' => $t->creator->name,
             ]);
 
-        $plans = Plan::orderBy('id')->get(['id','key','name']);
+        $plans = Plan::orderBy('id')->get(['id', 'key', 'name']);
 
         return Inertia::render('Owner/Organizations/Show', [
             'organization' => [
@@ -115,9 +178,15 @@ class OwnerOrganizationsController extends Controller
                     'name' => $organization->plan->name,
                 ] : null,
                 'subscription_status' => $organization->subscription_status,
+                'crm_stage' => $organization->crm_stage,
                 'trial_ends_at' => $organization->trial_ends_at?->toDateTimeString(),
                 'paid_until' => $organization->paid_until?->toDateTimeString(),
                 'created_at' => $organization->created_at->toDateTimeString(),
+                'logo_url' => $organization->brand_logo_path ? asset('storage/' . $organization->brand_logo_path) : null,
+                'owner' => $organization->ownerUser() ? [
+                    'name' => $organization->ownerUser()->name,
+                    'email' => $organization->ownerUser()->email,
+                ] : null,
             ],
             'stats' => [
                 'members' => $membersCount,
@@ -126,9 +195,9 @@ class OwnerOrganizationsController extends Controller
                 'last_payment_amount_kobo' => $lastPayment ? (int)$lastPayment->amount_cents : 0,
                 'last_payment_at' => $lastPayment?->created_at?->toDateTimeString(),
             ],
+            'timeline' => $timeline,
+            'tasks' => $tasks,
             'plans' => $plans,
-            'payments' => $payments,
-            'audit' => $audit,
         ]);
     }
 
@@ -137,18 +206,18 @@ class OwnerOrganizationsController extends Controller
         $admin = Auth::guard('owner')->user();
 
         $data = $request->validate([
-            'days' => ['required','integer','min:1','max:90'],
-            'reason' => ['nullable','string','max:255'],
+            'days' => ['required', 'integer', 'min:1', 'max:90'],
+            'reason' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $before = $organization->only(['subscription_status','trial_ends_at','paid_until','plan_id']);
+        $before = $organization->only(['subscription_status', 'trial_ends_at', 'paid_until', 'plan_id']);
 
         $organization->subscription_status = 'trial';
         $organization->trial_ends_at = now()->addDays($data['days']);
         // keep paid_until as-is; trial overrides in isActiveAccess logic
         $organization->save();
 
-        $after = $organization->only(['subscription_status','trial_ends_at','paid_until','plan_id']);
+        $after = $organization->only(['subscription_status', 'trial_ends_at', 'paid_until', 'plan_id']);
 
         $audit->log(
             $admin->id,
@@ -174,14 +243,14 @@ class OwnerOrganizationsController extends Controller
         }
 
         $data = $request->validate([
-            'plan_key' => ['required','string'],
-            'days' => ['required','integer','min:1','max:365'],
-            'reason' => ['nullable','string','max:255'],
+            'plan_key' => ['required', 'string'],
+            'days' => ['required', 'integer', 'min:1', 'max:365'],
+            'reason' => ['nullable', 'string', 'max:255'],
         ]);
 
         $plan = Plan::where('key', $data['plan_key'])->firstOrFail();
 
-        $before = $organization->only(['subscription_status','trial_ends_at','paid_until','plan_id']);
+        $before = $organization->only(['subscription_status', 'trial_ends_at', 'paid_until', 'plan_id']);
 
         $organization->plan_id = $plan->id;
         $organization->subscription_status = 'active';
@@ -194,7 +263,7 @@ class OwnerOrganizationsController extends Controller
         $organization->paid_until = $start->copy()->addDays($data['days']);
         $organization->save();
 
-        $after = $organization->only(['subscription_status','trial_ends_at','paid_until','plan_id']);
+        $after = $organization->only(['subscription_status', 'trial_ends_at', 'paid_until', 'plan_id']);
 
         $audit->log(
             $admin->id,
@@ -219,13 +288,13 @@ class OwnerOrganizationsController extends Controller
         }
 
         $data = $request->validate([
-            'plan_key' => ['required','string'], // e.g. free
-            'reason' => ['nullable','string','max:255'],
+            'plan_key' => ['required', 'string'], // e.g. free
+            'reason' => ['nullable', 'string', 'max:255'],
         ]);
 
         $plan = Plan::where('key', $data['plan_key'])->firstOrFail();
 
-        $before = $organization->only(['subscription_status','trial_ends_at','paid_until','plan_id']);
+        $before = $organization->only(['subscription_status', 'trial_ends_at', 'paid_until', 'plan_id']);
 
         $organization->plan_id = $plan->id;
         $organization->subscription_status = 'free';
@@ -233,7 +302,7 @@ class OwnerOrganizationsController extends Controller
         $organization->paid_until = null;
         $organization->save();
 
-        $after = $organization->only(['subscription_status','trial_ends_at','paid_until','plan_id']);
+        $after = $organization->only(['subscription_status', 'trial_ends_at', 'paid_until', 'plan_id']);
 
         $audit->log(
             $admin->id,
@@ -258,15 +327,15 @@ class OwnerOrganizationsController extends Controller
         }
 
         $data = $request->validate([
-            'reason' => ['required','string','max:255'],
+            'reason' => ['required', 'string', 'max:255'],
         ]);
 
-        $before = $organization->only(['subscription_status','trial_ends_at','paid_until','plan_id']);
+        $before = $organization->only(['subscription_status', 'trial_ends_at', 'paid_until', 'plan_id']);
 
         $organization->subscription_status = 'suspended';
         $organization->save();
 
-        $after = $organization->only(['subscription_status','trial_ends_at','paid_until','plan_id']);
+        $after = $organization->only(['subscription_status', 'trial_ends_at', 'paid_until', 'plan_id']);
 
         $audit->log(
             $admin->id,
@@ -291,12 +360,12 @@ class OwnerOrganizationsController extends Controller
         }
 
         $data = $request->validate([
-            'mode' => ['required','in:trial,active,free'],
-            'days' => ['nullable','integer','min:1','max:365'],
-            'reason' => ['nullable','string','max:255'],
+            'mode' => ['required', 'in:trial,active,free'],
+            'days' => ['nullable', 'integer', 'min:1', 'max:365'],
+            'reason' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $before = $organization->only(['subscription_status','trial_ends_at','paid_until','plan_id']);
+        $before = $organization->only(['subscription_status', 'trial_ends_at', 'paid_until', 'plan_id']);
 
         if ($data['mode'] === 'trial') {
             $organization->subscription_status = 'trial';
@@ -313,7 +382,7 @@ class OwnerOrganizationsController extends Controller
 
         $organization->save();
 
-        $after = $organization->only(['subscription_status','trial_ends_at','paid_until','plan_id']);
+        $after = $organization->only(['subscription_status', 'trial_ends_at', 'paid_until', 'plan_id']);
 
         $audit->log(
             $admin->id,
@@ -327,5 +396,31 @@ class OwnerOrganizationsController extends Controller
         );
 
         return back()->with('success', 'Organization reactivated.');
+    }
+    public function updateStage(Request $request, Organization $organization, AdminAudit $audit)
+    {
+        $admin = Auth::guard('owner')->user();
+
+        $data = $request->validate([
+            'stage' => ['required', 'in:lead,onboarding,active,risk,churned'],
+        ]);
+
+        $before = $organization->only(['subscription_status', 'trial_ends_at', 'paid_until', 'plan_id', 'crm_stage']);
+        $organization->crm_stage = $data['stage'];
+        $organization->save();
+        $after = $organization->only(['subscription_status', 'trial_ends_at', 'paid_until', 'plan_id', 'crm_stage']);
+
+        $audit->log(
+            $admin->id,
+            'org.crm_update_stage',
+            $organization,
+            $before,
+            $after,
+            null,
+            $request->ip(),
+            substr((string)$request->userAgent(), 0, 512)
+        );
+
+        return back()->with('success', 'CRM stage updated.');
     }
 }

@@ -12,7 +12,7 @@ class OrganizationPolicy
      */
     public function manageMembers(User $user, Organization $org): bool
     {
-        return $user->isOrgAdmin($org->id);
+        return $user->isOrgAdminOrAbove($org->id);
     }
 
     /**
@@ -20,7 +20,7 @@ class OrganizationPolicy
      */
     public function changeMemberRole(User $actor, Organization $org, User $target): bool
     {
-        if (!$actor->isOrgAdmin($org->id)) return false;
+        if (!$actor->isOrgAdminOrAbove($org->id)) return false;
 
         // No self role changes
         if ($actor->id === $target->id) return false;

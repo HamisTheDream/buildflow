@@ -13,6 +13,7 @@ class Admin extends Authenticatable
         'name',
         'email',
         'password',
+        'avatar_path',
         'is_super',
         'is_active',
         'last_login_at',
@@ -28,4 +29,34 @@ class Admin extends Authenticatable
         'is_active' => 'boolean',
         'last_login_at' => 'datetime',
     ];
+
+    public function department()
+    {
+        return $this->belongsTo(PlatformDepartment::class, 'department_id');
+    }
+
+    public function managedDepartments()
+    {
+        return $this->hasMany(PlatformDepartment::class, 'manager_id');
+    }
+
+    public function notes()
+    {
+        return $this->hasMany(OrganizationNote::class);
+    }
+
+    public function tasks()
+    {
+        return $this->hasMany(OrganizationTask::class, 'assigned_to');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true)->where('status', 'active');
+    }
+
+    public function scopeRole($query, $role)
+    {
+        return $query->where('role_type', $role);
+    }
 }

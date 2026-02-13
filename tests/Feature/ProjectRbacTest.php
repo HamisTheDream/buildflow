@@ -26,7 +26,7 @@ class ProjectRbacTest extends TestCase
 
         // 1. Setup Org
         $this->owner = User::factory()->create();
-        
+
         $plan = \App\Models\Plan::create([
             'name' => 'Free Plan',
             'slug' => 'free',
@@ -43,7 +43,7 @@ class ProjectRbacTest extends TestCase
             'subscription_status' => 'active',
             'paid_until' => now()->addYear(),
         ]);
-        
+
         // Attach owner
         $this->org->users()->attach($this->owner->id, ['role' => 'owner']);
         $this->owner->update(['current_organization_id' => $this->org->id]);
@@ -54,7 +54,7 @@ class ProjectRbacTest extends TestCase
             'name' => 'Test Project',
             'status' => 'active',
         ]);
-        
+
         // Owner is project owner
         $this->project->members()->attach($this->owner->id, ['role' => 'owner']);
 
@@ -65,22 +65,25 @@ class ProjectRbacTest extends TestCase
 
         $this->member = User::factory()->create(['current_organization_id' => $this->org->id]);
         $this->org->users()->attach($this->member->id, ['role' => 'member']);
-        
+
         $this->viewer = User::factory()->create(['current_organization_id' => $this->org->id]);
         $this->org->users()->attach($this->viewer->id, ['role' => 'member']); // org member, but project viewer
 
         // 4. Assign Project Roles
         // Admin -> PM
         $this->project->members()->attach($this->admin->id, ['role' => 'pm']);
-        
+
         // Member -> Clerk
         $this->project->members()->attach($this->member->id, ['role' => 'clerk']);
-        
+
         // Viewer -> Viewer
         $this->project->members()->attach($this->viewer->id, ['role' => 'viewer']);
-        
+
         // Disable subscription middleware for RBAC tests
-        $this->withoutMiddleware([\App\Http\Middleware\EnsureOrgActiveAccess::class]);
+        $this->withoutMiddleware([
+            \App\Http\Middleware\EnsureOrgActiveAccess::class,
+            \App\Http\Middleware\EnsureOrgHasAccess::class
+        ]);
     }
 
     public function test_viewer_cannot_create_task()
@@ -103,7 +106,7 @@ class ProjectRbacTest extends TestCase
                 'priority' => 'normal',
             ])
             ->assertRedirect(); // Success redirect
-            
+
         $this->assertDatabaseHas('project_tasks', ['title' => 'Legal Task']);
     }
 
@@ -115,7 +118,7 @@ class ProjectRbacTest extends TestCase
                 'role' => 'pm',
             ])
             ->assertForbidden();
-            
+
         // Try to demote owner
         $this->actingAs($this->viewer)
             ->patch(route('projects.team.update', [$this->project, $this->owner]), [
@@ -139,18 +142,18 @@ class ProjectRbacTest extends TestCase
         // Even if I am project owner (which owner is, but let's say another admin was project owner)
         // Org owner must be protected.
         // In this setup, Org Owner IS Project Owner, so test above covers it.
-        
+
         // Let's create a scenario where Org Owner is just a 'viewer' in a project managed by someone else.
         // (Unlikely flows but possible).
-        
+
         // Actually, the policy says: if target->isOrgOwner(), return false.
         // Let's verify that logic directly.
-        
+
         $this->assertTrue($this->owner->isOrgOwner($this->org->id));
-        
+
         // Try to change owner's role as Admin (who is PM) -> Forbidden
         $this->actingAs($this->admin)
-            ->patch(route('projects.team.update', [$this->project, $this->owner]), ['role'=>'viewer'])
+            ->patch(route('projects.team.update', [$this->project, $this->owner]), ['role' => 'viewer'])
             ->assertForbidden();
     }
 
@@ -173,20 +176,20 @@ class ProjectRbacTest extends TestCase
             ])
             ->assertForbidden();
     }
-    
-    public function test_org_member_cannot_promote_self_in_org() 
+
+    public function test_org_member_cannot_promote_self_in_org()
     {
         // Route for org member update: org.members.update
-        
+
         $this->actingAs($this->member)
             ->patch(route('org.members.update', $this->member), ['role' => 'admin'])
             ->assertForbidden();
     }
 
-     public function test_org_admin_cannot_demote_org_owner() 
+    public function test_org_admin_cannot_demote_org_owner()
     {
         $this->actingAs($this->admin)
-             ->patch(route('org.members.update', $this->owner), ['role' => 'member'])
-             ->assertForbidden();
+            ->patch(route('org.members.update', $this->owner), ['role' => 'member'])
+            ->assertForbidden();
     }
 }

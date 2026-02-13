@@ -1,17 +1,23 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Link, usePage } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
+import { Link, usePage, Head, useForm } from '@inertiajs/vue3'
 
-import SectionCard from '@/Components/SectionCard.vue'
-import SectionTitle from '@/Components/SectionTitle.vue'
+import ProjectLayout from '@/Layouts/ProjectLayout.vue'
 import EmptyState from '@/Components/EmptyState.vue'
 import Pagination from '@/Components/Pagination.vue'
 import Badge from '@/Components/Badge.vue'
+import PermissionNotice from '@/Components/PermissionNotice.vue'
+import Modal from '@/Components/Modal.vue'
+import InputLabel from '@/Components/InputLabel.vue'
+import TextInput from '@/Components/TextInput.vue'
+import PrimaryButton from '@/Components/PrimaryButton.vue'
+import SecondaryButton from '@/Components/SecondaryButton.vue'
 
-import { formatDateTime, truncate, formatEnum } from '@/utils/format'
+import { formatDateTime, formatEnum } from '@/utils/format'
 
 const page = usePage<any>()
 const project = computed(() => page.props.project ?? page.props.data?.project ?? null)
+const canManage = computed(() => page.props.canManage ?? true)
 
 const paginator = computed(() => page.props.media ?? page.props.rows ?? null)
 
@@ -27,6 +33,34 @@ const links = computed(() => {
   const p = paginator.value
   return p && !Array.isArray(p) ? p.links : null
 })
+
+const showModal = ref(false)
+const form = useForm({
+    files: [] as File[],
+    caption: '',
+})
+
+function openUpload() {
+    form.reset()
+    showModal.value = true
+}
+
+function handleFileChange(e: Event) {
+    const target = e.target as HTMLInputElement
+    if (target.files) {
+        form.files = Array.from(target.files)
+    }
+}
+
+function submit() {
+    form.post(`/app/projects/${project.value.id}/media`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showModal.value = false
+            form.reset()
+        },
+    })
+}
 
 function kindTone(k: string) {
   const v = (k || '').toLowerCase()
@@ -50,69 +84,119 @@ function openUrl(m:any) {
 </script>
 
 <template>
-  <SectionCard>
-    <SectionTitle title="Media" subtitle="Upload evidence, photos, videos and documents.">
-      <template #default>
-        <Link
-          v-if="project?.id"
-          :href="`/app/projects/${project.id}/media?new=1`"
-          class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black"
-        >
-          Upload
-        </Link>
-      </template>
-    </SectionTitle>
+  <ProjectLayout :project="project" active="media">
+    <Head :title="project?.name ? `Media — ${project.name}` : 'Media'" />
 
-    <div class="mt-4" v-if="!media || media.length === 0">
-      <EmptyState
-        title="No media yet"
-        description="Upload photos, videos, and files as evidence for reports, tasks, issues and costs."
-        actionLabel="Upload"
-        :actionHref="project?.id ? `/app/projects/${project.id}/media?new=1` : undefined"
-      />
-    </div>
-
-    <div v-else class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <a
-        v-for="m in media"
-        :key="m.id"
-        :href="openUrl(m)"
-        target="_blank"
-        class="group rounded-2xl border bg-white p-3 hover:bg-gray-50"
-      >
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <div class="text-sm font-semibold text-gray-900">
-              {{ truncate(m.name || m.filename || 'File', 45) }}
+    <div class="space-y-6">
+        <div class="flex items-center justify-between">
+            <div>
+               <h2 class="text-lg font-medium text-gray-900">Media</h2>
+               <p class="mt-1 text-sm text-gray-500">Upload evidence, photos, videos and documents.</p>
             </div>
-            <div class="mt-1 text-xs text-gray-500">
-              {{ formatDateTime(m.created_at) }}
-            </div>
-          </div>
-
-          <Badge :text="formatEnum(fileKind(m))" :tone="kindTone(fileKind(m)) as any" />
+            
+             <button
+              v-if="project?.id && canManage"
+              @click="openUpload()"
+              class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-black transition"
+            >
+              Upload
+            </button>
         </div>
 
-        <div class="mt-3 overflow-hidden rounded-xl border bg-gray-50">
-          <img
-            v-if="thumbUrl(m)"
-            :src="thumbUrl(m)"
-            class="h-40 w-full object-cover transition group-hover:scale-[1.02]"
-            alt=""
+        <PermissionNotice v-if="!canManage" />
+
+        <div v-if="!media || media.length === 0" class="rounded-xl border-2 border-dashed border-gray-200 p-12">
+          <EmptyState
+            icon="media"
+            title="No photos or files uploaded"
+            description="Capture progress by uploading images and documents."
+            :actionText="canManage ? 'Upload' : undefined"
+            :actionCallback="canManage ? openUpload : undefined"
           />
-          <div v-else class="flex h-40 items-center justify-center text-xs font-semibold text-gray-500">
-            No preview
-          </div>
         </div>
 
-        <div class="mt-3 text-xs font-semibold text-indigo-600">
-          Open
-        </div>
-      </a>
-    </div>
+        <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <a
+            v-for="m in media"
+            :key="m.id"
+            :href="openUrl(m)"
+            target="_blank"
+            class="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all hover:shadow-lg"
+          >
+            <!-- Thumbnail -->
+             <div class="aspect-video w-full bg-gray-100 relative overflow-hidden">
+                 <img
+                    v-if="thumbUrl(m)"
+                    :src="thumbUrl(m)"
+                    class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    alt=""
+                  />
+                  <div v-else class="flex h-full items-center justify-center text-gray-400">
+                       <svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                  </div>
+                  
+                  <!-- Overlay Type Badge -->
+                  <div class="absolute top-2 right-2">
+                       <Badge :text="formatEnum(fileKind(m))" :tone="kindTone(fileKind(m)) as any" size="sm" class="shadow-sm border-0" />
+                  </div>
+             </div>
 
-    <div class="mt-5" v-if="links">
-      <Pagination :links="links" />
+             <!-- Info -->
+            <div class="flex flex-1 flex-col p-4">
+               <h3 class="text-sm font-medium text-gray-900 truncate" :title="m.name || m.filename">
+                  {{ m.name || m.filename || 'File' }}
+               </h3>
+               <p v-if="m.caption" class="mt-1 text-sm text-gray-600 line-clamp-2">
+                   {{ m.caption }}
+               </p>
+               <p class="mt-1 text-xs text-gray-500">{{ formatDateTime(m.created_at) }}</p>
+            </div>
+            
+            <div class="bg-gray-50 px-4 py-2 text-xs font-medium text-brand-600 group-hover:bg-brand-50 transition-colors">
+                View File &rarr;
+            </div>
+          </a>
+        </div>
+
+        <div v-if="links" class="mt-6">
+          <Pagination :links="links" />
+        </div>
     </div>
-  </SectionCard>
+    
+    <!-- Upload Modal -->
+    <Modal :show="showModal" @close="showModal = false">
+        <div class="p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-6">Upload Media</h2>
+            <form @submit.prevent="submit" class="space-y-4">
+                <div>
+                    <InputLabel value="Files" />
+                    <input 
+                        type="file" 
+                        multiple 
+                        @change="handleFileChange" 
+                        class="mt-1 block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-brand-50 file:text-brand-700
+                        hover:file:bg-brand-100"
+                    />
+                    <div v-if="form.errors.files" class="mt-1.5 text-sm text-red-600">{{ form.errors.files }}</div>
+                </div>
+
+                <div>
+                    <InputLabel value="Caption (Optional)" />
+                    <TextInput v-model="form.caption" class="mt-1 block w-full" placeholder="Describe these files..." />
+                    <p class="mt-1 text-xs text-gray-500">This caption will be applied to all uploaded files.</p>
+                     <div v-if="form.errors.caption" class="mt-1.5 text-sm text-red-600">{{ form.errors.caption }}</div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-4">
+                    <SecondaryButton @click="showModal = false">Cancel</SecondaryButton>
+                    <PrimaryButton type="submit" :disabled="form.processing">Upload</PrimaryButton>
+                </div>
+            </form>
+        </div>
+    </Modal>
+  </ProjectLayout>
 </template>

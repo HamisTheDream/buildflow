@@ -65,26 +65,41 @@ class User extends Authenticatable
 
     public function isOrgOwner(int $organizationId): bool
     {
-        return $this->orgRole($organizationId) === 'owner';
+        return $this->orgRole($organizationId) === \App\Enums\Role::OWNER->value;
     }
 
-    public function isOrgAdmin(int $organizationId): bool
+    public function isOrgAdminOrAbove(int $organizationId): bool
     {
-        return in_array($this->orgRole($organizationId), ['owner', 'admin'], true);
+        return in_array($this->orgRole($organizationId), [\App\Enums\Role::OWNER->value, \App\Enums\Role::ADMIN->value], true);
+    }
+
+    /**
+     * Check if user has access to a specific module in the given organization.
+     */
+    public function hasModuleAccess(string $module, ?Organization $org = null): bool
+    {
+        $org = $org ?? $this->currentOrganization;
+
+        if (!$org) {
+            return false;
+        }
+
+        $role = $this->orgRole($org->id);
+
+        if (!$role) {
+            return false;
+        }
+
+        $allowedModules = config("erp.roles.{$role}.modules", []);
+
+        return in_array($module, $allowedModules);
     }
 
     public function projectRole(int $projectId): ?string
     {
-        if (method_exists($this, 'projects')) {
-            return $this->projects()
-                ->where('projects.id', $projectId)
-                ->first()?->pivot?->role;
-        }
-
-        return \Illuminate\Support\Facades\DB::table('project_members')
-            ->where('project_id', $projectId)
-            ->where('user_id', $this->id)
-            ->value('role');
+        return $this->projects()
+            ->where('projects.id', $projectId)
+            ->first()?->pivot?->role;
     }
 
     public function isProjectOwner(int $projectId): bool

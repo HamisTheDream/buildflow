@@ -30,13 +30,13 @@ const form = useForm({
       <form class="mt-6 space-y-4" @submit.prevent="form.post('/owner/login')">
         <div>
           <label class="text-xs font-semibold text-gray-700">Email</label>
-          <input v-model="form.email" type="email" class="mt-1 w-full rounded-lg border p-2 text-sm" placeholder="admin@buildflow.com" />
+          <input v-model="form.email" type="email" class="mt-1 w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="admin@buildflow.com" />
           <div v-if="form.errors.email" class="mt-1 text-xs text-red-600">{{ form.errors.email }}</div>
         </div>
 
         <div>
           <label class="text-xs font-semibold text-gray-700">Password</label>
-          <input v-model="form.password" type="password" class="mt-1 w-full rounded-lg border p-2 text-sm" placeholder="••••••••" />
+          <input v-model="form.password" type="password" class="mt-1 w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="••••••••" />
           <div v-if="form.errors.password" class="mt-1 text-xs text-red-600">{{ form.errors.password }}</div>
         </div>
 

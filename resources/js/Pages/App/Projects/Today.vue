@@ -3,6 +3,7 @@ import ProjectLayout from '@/Layouts/ProjectLayout.vue'
 import { Head, useForm, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import AttachmentsBox from '@/Components/AttachmentsBox.vue'
+import { formatDateTime } from '@/utils/format'
 
 const props = defineProps<{
   project: { id: number; name: string; status: string }
@@ -111,7 +112,7 @@ function save() {
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <div class="truncate text-sm font-semibold text-gray-900">{{ l.user.name }}</div>
-                <div class="text-xs text-gray-500">{{ l.user.email }} • Updated: {{ l.updated_at }}</div>
+                <div class="text-xs text-gray-500">{{ l.user.email }} • Updated: {{ formatDateTime(l.updated_at) }}</div>
               </div>
               <div class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700">
                 {{ l.progress_percent ?? '—' }}%

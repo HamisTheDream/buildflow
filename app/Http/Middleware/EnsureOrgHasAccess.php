@@ -2,42 +2,43 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\CurrentOrg;
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class EnsureOrgHasAccess
 {
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
         if (!$user) return $next($request);
 
-        // using currentOrg binding if available, or resolving it manually
-        // Assuming 'currentOrg' is bound in a previous middleware or service provider
-        // If not, we can try to resolve it from the user's current context or session
-        $org = app()->has('currentOrg') ? app('currentOrg') : null;
-        
-        // If not bound, try to get it from user context if possible (optional fallback)
-        if (!$org && $user->current_organization_id) {
-             $org = \App\Models\Organization::find($user->current_organization_id);
-        }
-
+        $org = CurrentOrg::forUser($user);
         if (!$org) return $next($request);
 
-        // Allow billing routes even when locked
-        if ($request->is('app/billing*')) {
-            return $next($request);
+        // Always allow these paths even if subscription expired
+        $path = '/' . ltrim($request->path(), '/');
+
+        $allowedPrefixes = [
+            '/app/dashboard',
+            '/dashboard',
+            '/app/billing',
+            '/app/settings/profile',
+            '/app/profile',
+            '/app/support',
+            '/logout',
+        ];
+
+        foreach ($allowedPrefixes as $prefix) {
+            if (str_starts_with($path, $prefix)) {
+                return $next($request);
+            }
         }
 
-        // Allow auth/profile routes to prevent lockouts
-        if ($request->is('app/profile*') || $request->is('app/logout')) {
-            return $next($request);
-        }
-
-        // Lock if org has no access
-        if (method_exists($org, 'hasAppAccess') && !$org->hasAppAccess()) {
+        if (!$org->hasAppAccess()) {
             return redirect('/app/billing')
-                ->with('error', 'Your subscription needs attention. Please renew to continue.');
+                ->with('error', 'Your subscription has expired. Renew to continue using BuildFlow.');
         }
 
         return $next($request);

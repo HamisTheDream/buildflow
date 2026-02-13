@@ -44,5 +44,51 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ProjectMedia::class, ProjectMediaPolicy::class);
         Gate::policy(ProjectReport::class, ProjectReportPolicy::class);
         Gate::policy(\App\Models\Attachment::class, \App\Policies\AttachmentPolicy::class);
+        Gate::policy(\App\Models\OrganizationNote::class, \App\Policies\Owner\OrganizationNotePolicy::class);
+        Gate::policy(\App\Models\OrganizationTask::class, \App\Policies\Owner\OrganizationTaskPolicy::class);
+
+        // Register humanized validation messages
+        \Illuminate\Support\Facades\Validator::replacer('required', fn($m, $a, $r, $p) => "Please enter {$a}.");
+
+        // Configure rate limiters
+        $this->configureRateLimiting();
+    }
+
+    /**
+     * Configure the rate limiters for the application.
+     */
+    protected function configureRateLimiting(): void
+    {
+        $limiter = app(\Illuminate\Cache\RateLimiter::class);
+
+        // General API rate limiting: 60 requests per minute
+        $limiter->for('api', function ($request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(60)
+                ->by($request->user()?->id ?: $request->ip());
+        });
+
+        // Stricter auth rate limiting: 5 attempts per minute
+        $limiter->for('auth', function ($request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(5)
+                ->by($request->ip());
+        });
+
+        // Webhook rate limiting: 100 per minute (for payment provider callbacks)
+        $limiter->for('webhooks', function ($request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(100)
+                ->by($request->ip());
+        });
+
+        // Heavy operations rate limiting: 10 per minute
+        $limiter->for('heavy', function ($request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(10)
+                ->by($request->user()?->id ?: $request->ip());
+        });
+
+        // File uploads rate limiting: 30 per minute
+        $limiter->for('uploads', function ($request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(30)
+                ->by($request->user()?->id ?: $request->ip());
+        });
     }
 }

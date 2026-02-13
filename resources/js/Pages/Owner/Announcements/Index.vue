@@ -44,10 +44,10 @@ function targetingText(a:any) {
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div class="grid grid-cols-1 gap-3 md:grid-cols-12 md:w-3/4">
             <div class="md:col-span-8">
-              <input v-model="form.q" class="w-full rounded-lg border p-2 text-sm" placeholder="Search title/body..." />
+              <input v-model="form.q" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="Search title/body..." />
             </div>
             <div class="md:col-span-3">
-              <select v-model="form.active" class="w-full rounded-lg border p-2 text-sm">
+              <select v-model="form.active" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500">
                 <option value="">All</option>
                 <option value="1">Active only</option>
                 <option value="0">Inactive only</option>

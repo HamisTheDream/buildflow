@@ -20,6 +20,7 @@ class ProjectTasksController extends Controller
         $filters = $request->validate([
             'status' => ['nullable', 'in:todo,doing,done,blocked'],
             'assignee' => ['nullable', 'integer'],
+            'unit' => ['nullable', 'integer'],
             'q' => ['nullable', 'string', 'max:80'],
         ]);
 
@@ -28,16 +29,18 @@ class ProjectTasksController extends Controller
             ->with([
                 'assignee:id,name,email',
                 'creator:id,name,email',
+                'unit:id,name',
                 'attachments.uploader:id,name,email',
             ]);
 
         if (!empty($filters['status'])) $query->where('status', $filters['status']);
         if (!empty($filters['assignee'])) $query->where('assigned_to', (int)$filters['assignee']);
+        if (!empty($filters['unit'])) $query->where('project_unit_id', (int)$filters['unit']);
         if (!empty($filters['q'])) {
             $q = $filters['q'];
             $query->where(function ($qq) use ($q) {
                 $qq->where('title', 'like', "%{$q}%")
-                   ->orWhere('description', 'like', "%{$q}%");
+                    ->orWhere('description', 'like', "%{$q}%");
             });
         }
 
@@ -49,7 +52,7 @@ class ProjectTasksController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        $tasks->getCollection()->transform(fn ($t) => [
+        $tasks->getCollection()->transform(fn($t) => [
             'id' => $t->id,
             'title' => $t->title,
             'description' => $t->description,
@@ -58,8 +61,9 @@ class ProjectTasksController extends Controller
             'due_date' => $t->due_date?->toDateString(),
             'assigned_to' => $t->assigned_to,
             'project_id' => $t->project_id,
-            'assignee' => $t->assignee ? $t->assignee->only('id','name','email') : null,
-            'creator' => $t->creator ? $t->creator->only('id','name','email') : null,
+            'unit' => $t->unit ? $t->unit->only('id', 'name') : null,
+            'assignee' => $t->assignee ? $t->assignee->only('id', 'name', 'email') : null,
+            'creator' => $t->creator ? $t->creator->only('id', 'name', 'email') : null,
             'attachments' => $t->attachments->map(fn($a) => [
                 'id' => $a->id,
                 'url' => $a->url(),
@@ -82,41 +86,32 @@ class ProjectTasksController extends Controller
             ->select('users.id', 'users.name')
             ->orderBy('users.name')
             ->get()
-            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name]);
+            ->map(fn($u) => ['id' => $u->id, 'name' => $u->name]);
+
+        $units = $project->units()->orderBy('name')->select('id', 'name')->get();
 
         return Inertia::render('App/Projects/Tasks', [
-            'project' => $project->only(['id','name','status']),
+            'project' => $project->only(['id', 'name', 'status']),
             'canManage' => $request->user()->can('create', [ProjectTask::class, $project]),
             'assignees' => $assignees,
+            'units' => $units,
             'filters' => [
                 'status' => $request->query('status', ''),
                 'assignee' => $request->query('assignee', ''),
+                'unit' => $request->query('unit', ''),
                 'q' => $request->query('q', ''),
             ],
             'tasks' => $tasks,
         ]);
     }
 
-    public function store(Request $request, Project $project, ActivityLogger $activity)
+    public function store(\App\Http\Requests\StoreTaskRequest $request, Project $project, ActivityLogger $activity)
     {
         Gate::authorize('view', $project);
         Gate::authorize('editContent', $project);
         Gate::authorize('create', [ProjectTask::class, $project]);
 
-        $data = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'status' => ['required', 'in:todo,doing,done,blocked'],
-            'priority' => ['required', 'in:low,normal,high,urgent'],
-            'due_date' => ['nullable', 'date'],
-            'assigned_to' => ['nullable', 'integer'],
-        ]);
-
-        // assigned_to must be a project member if provided
-        if (!empty($data['assigned_to'])) {
-            $isMember = $project->members()->where('users.id', (int)$data['assigned_to'])->exists();
-            abort_unless($isMember, 422);
-        }
+        $data = $request->validated();
 
         $task = ProjectTask::create([
             'project_id' => $project->id,
@@ -124,19 +119,30 @@ class ProjectTasksController extends Controller
             ...$data,
         ]);
 
-        if (!empty($task->assigned_to)) {
+        if (!empty($task->assigned_to) && (int)$task->assigned_to !== (int)$request->user()->id) {
             $assignee = \App\Models\User::find($task->assigned_to);
-             if ($assignee) {
-                $assignee->notify(new \App\Notifications\TaskAssigned($project, $task));
+            if ($assignee) {
+                // Create in-app notification
+                \App\Models\Notification::create([
+                    'user_id' => $assignee->id,
+                    'type' => 'task_assigned',
+                    'title' => "New task: {$task->title}",
+                    'body' => "{$request->user()->name} assigned you a task on {$project->name}",
+                    'data' => ['project_id' => $project->id, 'task_id' => $task->id],
+                ]);
+                // Send email notification
+                $assignee->notify(new \App\Notifications\TaskAssignedNotification($task, $project, $request->user()->name));
             }
         }
 
         $activity->logModel($request, $project->organization_id, $project->id, $request->user()->id, 'created', 'tasks', null, $task);
 
+        \App\Http\Controllers\App\DashboardController::clearCache($project->organization_id);
+
         return back()->with('success', 'Task created.');
     }
 
-    public function update(Request $request, Project $project, ProjectTask $task, ActivityLogger $activity)
+    public function update(\App\Http\Requests\StoreTaskRequest $request, Project $project, ProjectTask $task, ActivityLogger $activity)
     {
         Gate::authorize('view', $project);
         Gate::authorize('editContent', $project);
@@ -148,9 +154,8 @@ class ProjectTasksController extends Controller
         abort_unless($isManager || $canStatus, 403);
 
         if (!$isManager) {
-            $data = $request->validate([
-                'status' => ['required', 'in:todo,doing,done,blocked'],
-            ]);
+            // Non-managers can only update status
+            $data = $request->safe()->only(['status']);
 
             $oldStatus = $task->status;
             $task->update($data);
@@ -162,19 +167,7 @@ class ProjectTasksController extends Controller
             return back()->with('success', 'Task status updated.');
         }
 
-        $data = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'status' => ['required', 'in:todo,doing,done,blocked'],
-            'priority' => ['required', 'in:low,normal,high,urgent'],
-            'due_date' => ['nullable', 'date'],
-            'assigned_to' => ['nullable', 'integer'],
-        ]);
-
-        if (!empty($data['assigned_to'])) {
-            $isMember = $project->members()->where('users.id', (int)$data['assigned_to'])->exists();
-            abort_unless($isMember, 422);
-        }
+        $data = $request->validated();
 
         $before = $task->replicate();
         $task->update($data);
@@ -184,9 +177,17 @@ class ProjectTasksController extends Controller
         if ($task->assigned_to && (int)$task->assigned_to !== (int)$before->assigned_to) {
             $assignee = \App\Models\User::find($task->assigned_to);
             if ($assignee) {
-                $assignee->notify(new \App\Notifications\TaskAssigned($project, $task));
+                \App\Models\Notification::create([
+                    'user_id' => $assignee->id,
+                    'type' => 'task_assigned',
+                    'title' => "Task reassigned: {$task->title}",
+                    'body' => "{$request->user()->name} assigned you a task on {$project->name}",
+                    'data' => ['project_id' => $project->id, 'task_id' => $task->id],
+                ]);
+                $assignee->notify(new \App\Notifications\TaskAssignedNotification($task, $project, $request->user()->name));
             }
         }
+
 
         return back()->with('success', 'Task updated.');
     }
@@ -203,6 +204,8 @@ class ProjectTasksController extends Controller
         $task->delete();
 
         $activity->logModel($request, $project->organization_id, $project->id, $request->user()->id, 'deleted', 'tasks', $before, null);
+
+        \App\Http\Controllers\App\DashboardController::clearCache($project->organization_id);
 
         return back()->with('success', 'Task deleted.');
     }

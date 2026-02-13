@@ -25,11 +25,12 @@ class ProjectLogsController extends Controller
     {
         Gate::authorize('view', $project);
 
-        $types = ['general','site_visit','progress','material','labor','safety','client','finance','issue'];
+        $types = ['general', 'site_visit', 'progress', 'material', 'labor', 'safety', 'client', 'finance', 'issue'];
 
         $filters = $request->validate([
-            'type' => ['nullable', 'in:'.implode(',', $types)],
+            'type' => ['nullable', 'in:' . implode(',', $types)],
             'author' => ['nullable', 'integer'],
+            'unit' => ['nullable', 'integer'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date'],
             'q' => ['nullable', 'string', 'max:80'],
@@ -39,18 +40,20 @@ class ProjectLogsController extends Controller
             ->where('project_id', $project->id)
             ->with([
                 'user:id,name,email',
+                'unit:id,name',
                 'attachments.uploader:id,name,email',
             ]);
 
         if (!empty($filters['type'])) $query->where('type', $filters['type']);
         if (!empty($filters['author'])) $query->where('user_id', (int)$filters['author']);
+        if (!empty($filters['unit'])) $query->where('project_unit_id', (int)$filters['unit']);
         if (!empty($filters['from'])) $query->where('log_date', '>=', $filters['from']);
         if (!empty($filters['to'])) $query->where('log_date', '<=', $filters['to']);
         if (!empty($filters['q'])) {
             $q = $filters['q'];
             $query->where(function ($qq) use ($q) {
                 $qq->where('title', 'like', "%{$q}%")
-                   ->orWhere('body', 'like', "%{$q}%");
+                    ->orWhere('body', 'like', "%{$q}%");
             });
         }
 
@@ -60,14 +63,20 @@ class ProjectLogsController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        $logs->getCollection()->transform(fn ($l) => [
+        $logs->getCollection()->transform(fn($l) => [
             'id' => $l->id,
             'log_date' => $l->log_date->toDateString(),
             'log_time' => $l->log_time,
             'type' => $l->type,
             'title' => $l->title,
             'body' => $l->body,
-            'user' => $l->user ? $l->user->only('id','name','email') : null,
+            'workforce_count' => $l->workforce_count,
+            'weather' => $l->weather,
+            'materials_delivered' => $l->materials_delivered,
+            'blockers' => $l->blockers,
+            'next_day_plan' => $l->next_day_plan,
+            'unit' => $l->unit ? $l->unit->only('id', 'name') : null,
+            'user' => $l->user ? $l->user->only('id', 'name', 'email') : null,
             'created_at' => $l->created_at->toDateTimeString(),
             'attachments' => $l->attachments->map(fn($a) => [
                 'id' => $a->id,
@@ -92,30 +101,35 @@ class ProjectLogsController extends Controller
             ->select('users.id', 'users.name')
             ->orderBy('users.name')
             ->get()
-            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name]);
+            ->map(fn($u) => ['id' => $u->id, 'name' => $u->name]);
 
         // Include org admins/owners too (they may not be project members)
         $org = $request->user()->currentOrganization;
         if ($org) {
             $orgAdmins = $org->users()
-                ->whereIn('organization_user.role', ['owner','admin'])
+                ->whereIn('organization_user.role', ['owner', 'admin'])
                 ->select('users.id', 'users.name')
                 ->orderBy('users.name')
                 ->get()
-                ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name]);
+                ->map(fn($u) => ['id' => $u->id, 'name' => $u->name]);
 
             // merge unique
             $authors = $authors->merge($orgAdmins)->unique('id')->values();
         }
 
+        // Units
+        $units = $project->units()->orderBy('name')->select('id', 'name')->get();
+
         return Inertia::render('App/Projects/Logs', [
-            'project' => $project->only(['id','name','status']),
+            'project' => $project->only(['id', 'name', 'status']),
             'canWrite' => $this->canWrite($request, $project),
             'types' => $types,
             'authors' => $authors,
+            'units' => $units,
             'filters' => [
                 'type' => $request->query('type', ''),
                 'author' => $request->query('author', ''),
+                'unit' => $request->query('unit', ''),
                 'from' => $request->query('from', ''),
                 'to' => $request->query('to', ''),
                 'q' => $request->query('q', ''),
@@ -130,15 +144,29 @@ class ProjectLogsController extends Controller
         Gate::authorize('editContent', $project);
         abort_unless($this->canWrite($request, $project), 403);
 
-        $types = ['general','site_visit','progress','material','labor','safety','client','finance','issue'];
+        $types = ['general', 'site_visit', 'progress', 'material', 'labor', 'safety', 'client', 'finance', 'issue'];
 
         $data = $request->validate([
             'log_date' => ['required', 'date'],
             'log_time' => ['nullable', 'date_format:H:i'],
-            'type' => ['required', 'in:'.implode(',', $types)],
+            'type' => ['required', 'in:' . implode(',', $types)],
             'title' => ['nullable', 'string', 'max:255'],
             'body' => ['nullable', 'string'],
+            'workforce_count' => ['nullable', 'integer', 'min:0'],
+            'weather' => ['nullable', 'string', 'max:50'],
+            'materials_delivered' => ['nullable', 'string'],
+            'blockers' => ['nullable', 'string'],
+            'next_day_plan' => ['nullable', 'string'],
+            'project_unit_id' => ['nullable', 'exists:project_units,id'],
         ]);
+
+        if (!empty($data['project_unit_id'])) {
+            // Ensure unit belongs to project
+            $unit = $project->units()->find($data['project_unit_id']);
+            if (!$unit) {
+                return back()->with('error', 'Invalid unit.');
+            }
+        }
 
         ProjectLog::create([
             'project_id' => $project->id,
@@ -160,19 +188,32 @@ class ProjectLogsController extends Controller
 
         $user = $request->user();
         $orgRole = $user->orgRole($project->organization_id) ?? 'member';
-        if (!in_array($orgRole, ['owner','admin']) && $log->user_id !== $user->id) {
+        if (!in_array($orgRole, ['owner', 'admin']) && $log->user_id !== $user->id) {
             abort(403);
         }
 
-        $types = ['general','site_visit','progress','material','labor','safety','client','finance','issue'];
+        $types = ['general', 'site_visit', 'progress', 'material', 'labor', 'safety', 'client', 'finance', 'issue'];
 
         $data = $request->validate([
             'log_date' => ['required', 'date'],
             'log_time' => ['nullable', 'date_format:H:i'],
-            'type' => ['required', 'in:'.implode(',', $types)],
+            'type' => ['required', 'in:' . implode(',', $types)],
             'title' => ['nullable', 'string', 'max:255'],
             'body' => ['nullable', 'string'],
+            'workforce_count' => ['nullable', 'integer', 'min:0'],
+            'weather' => ['nullable', 'string', 'max:50'],
+            'materials_delivered' => ['nullable', 'string'],
+            'blockers' => ['nullable', 'string'],
+            'next_day_plan' => ['nullable', 'string'],
+            'project_unit_id' => ['nullable', 'exists:project_units,id'],
         ]);
+
+        if (!empty($data['project_unit_id'])) {
+            $unit = $project->units()->find($data['project_unit_id']);
+            if (!$unit) {
+                return back()->with('error', 'Invalid unit.');
+            }
+        }
 
         $log->update($data);
 
@@ -189,7 +230,7 @@ class ProjectLogsController extends Controller
 
         $user = $request->user();
         $orgRole = $user->orgRole($project->organization_id) ?? 'member';
-        if (!in_array($orgRole, ['owner','admin']) && $log->user_id !== $user->id) {
+        if (!in_array($orgRole, ['owner', 'admin']) && $log->user_id !== $user->id) {
             abort(403);
         }
 

@@ -45,16 +45,16 @@ function priorityTone(p:string) {
     <SectionCard title="Support tickets" subtitle="Track user requests and bugs.">
       <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
         <div class="md:col-span-6">
-          <input v-model="form.q" class="w-full rounded-lg border p-2 text-sm" placeholder="Search ticket / org..." />
+          <input v-model="form.q" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="Search ticket / org..." />
         </div>
         <div class="md:col-span-3">
-          <select v-model="form.status" class="w-full rounded-lg border p-2 text-sm">
+          <select v-model="form.status" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500">
             <option value="">All statuses</option>
             <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
           </select>
         </div>
         <div class="md:col-span-2">
-          <select v-model="form.priority" class="w-full rounded-lg border p-2 text-sm">
+          <select v-model="form.priority" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500">
             <option value="">All priorities</option>
             <option v-for="p in priorities" :key="p" :value="p">{{ p }}</option>
           </select>

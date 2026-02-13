@@ -6,11 +6,20 @@ use Illuminate\Database\Eloquent\Model;
 
 class SupportTicketNote extends Model
 {
-    protected $fillable = ['support_ticket_id','admin_id','note'];
+    protected $fillable = ['support_ticket_id', 'admin_id', 'user_id', 'note', 'is_public'];
+
+    protected $casts = [
+        'is_public' => 'boolean',
+    ];
 
     public function admin()
     {
         return $this->belongsTo(\App\Models\Admin::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class);
     }
 
     public function ticket()

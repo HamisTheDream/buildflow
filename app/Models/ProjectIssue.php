@@ -11,12 +11,14 @@ class ProjectIssue extends Model
         'project_id',
         'created_by',
         'assigned_to',
+        'project_unit_id',
         'title',
         'description',
         'status',
         'severity',
         'category',
         'due_date',
+        'location',
         'resolved_at',
         'resolved_by',
     ];
@@ -25,6 +27,11 @@ class ProjectIssue extends Model
         'due_date' => 'date',
         'resolved_at' => 'datetime',
     ];
+
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(ProjectUnit::class, 'project_unit_id');
+    }
 
     public function project(): BelongsTo
     {

@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Http;
+
 class PaystackService
 {
     private string $secretKey;
@@ -32,31 +34,25 @@ class PaystackService
     private function request(string $method, string $endpoint, array $data = []): array
     {
         $url = $this->baseUrl . $endpoint;
-        
-        $options = [
-            'http' => [
-                'method' => $method,
-                'header' => [
-                    "Authorization: Bearer {$this->secretKey}",
-                    "Content-Type: application/json",
-                    "Cache-Control: no-cache",
-                ],
-                'ignore_errors' => true,
-            ],
-        ];
 
-        if ($method === 'POST') {
-            $options['http']['content'] = json_encode($data);
+        $http = Http::withToken($this->secretKey)
+            ->timeout(15)
+            ->acceptJson();
+
+        $response = match (strtoupper($method)) {
+            'POST' => $http->post($url, $data),
+            'GET' => $http->get($url),
+            default => throw new \InvalidArgumentException("Unsupported HTTP method: {$method}"),
+        };
+
+        $response->throw();
+
+        $body = $response->json();
+
+        if (!($body['status'] ?? false)) {
+            throw new \Exception('Paystack request failed: ' . ($body['message'] ?? 'Unknown error'));
         }
 
-        $context = stream_context_create($options);
-        $result = file_get_contents($url, false, $context);
-        $response = json_decode($result, true);
-
-        if (!$response || !($response['status'] ?? false)) {
-            throw new \Exception('Paystack request failed: ' . ($response['message'] ?? 'Unknown error'));
-        }
-
-        return $response['data'];
+        return $body['data'];
     }
 }

@@ -58,7 +58,7 @@ class PaystackWebhookController extends Controller
                 // For O4, we assume payment exists or verification tool is used. 
                 // BUT, to be safe, let's keep the creation logic minimal or skip it if complex.
                 // The provided O4 snippet assumes payment exists. Let's start there.
-                
+
                 if (!$payment) {
                     // Try to finding it via metadata logic (simplified from O3)
                     // ... or just return if not found, relying on manual verify.
@@ -79,8 +79,18 @@ class PaystackWebhookController extends Controller
                 ]);
                 $payment->save();
 
+                // Handle Invoice Payments
+                if ($payment->invoice_id) {
+                    $invoice = $payment->invoice;
+                    if ($invoice && $invoice->status !== 'paid') {
+                        $invoice->update(['status' => 'paid']);
+                        Log::info("Paystack Webhook: Invoice #{$invoice->number} marked as paid.");
+                    }
+                }
+
                 $org = Organization::find($payment->organization_id);
-                if ($org) {
+                // Handle Subscription Payments (Only if plan_id exists)
+                if ($org && $payment->plan_id) {
                     $days = (int) data_get($data, 'metadata.days', 30);
                     $planId = data_get($data, 'metadata.plan_id');
                     $lifecycle->applySuccessfulPayment($org, $days, $planId ? (int)$planId : null);

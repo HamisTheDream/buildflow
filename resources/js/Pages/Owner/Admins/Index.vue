@@ -37,7 +37,7 @@ function toggleActive(a:any) {
     <SectionCard title="Admins" subtitle="Manage owner admins securely.">
       <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div class="flex gap-2 w-full md:w-2/3">
-          <input v-model="form.q" class="w-full rounded-lg border p-2 text-sm" placeholder="Search by name/email..." />
+          <input v-model="form.q" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="Search by name/email..." />
           <button @click="apply" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">Go</button>
         </div>
 
@@ -49,7 +49,7 @@ function toggleActive(a:any) {
       <div class="mt-4 rounded-xl border p-4 bg-gray-50">
         <div class="text-sm font-semibold text-gray-900">Audit reason (optional)</div>
         <div class="mt-1 text-xs text-gray-500">Used for any toggle action you perform below.</div>
-        <input v-model="reasonForm.audit_reason" class="mt-2 w-full rounded-lg border p-2 text-sm" placeholder="e.g. Promote to super to handle billing ops" />
+        <input v-model="reasonForm.audit_reason" class="mt-2 w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="e.g. Promote to super to handle billing ops" />
       </div>
 
       <div class="mt-6 overflow-x-auto">

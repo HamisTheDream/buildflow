@@ -20,7 +20,7 @@ class ReportService
             ->with('user:id,name,email')
             ->orderBy('log_date')
             ->get()
-            ->map(fn ($l) => [
+            ->map(fn($l) => [
                 'id' => $l->id,
                 'log_date' => $l->log_date->toDateString(),
                 'user' => ['id' => $l->user->id, 'name' => $l->user->name, 'email' => $l->user->email],
@@ -38,7 +38,7 @@ class ReportService
             ->orderBy('log_date')
             ->orderBy('id')
             ->get()
-            ->map(fn ($l) => [
+            ->map(fn($l) => [
                 'id' => $l->id,
                 'log_date' => $l->log_date->toDateString(),
                 'log_time' => $l->log_time ? substr($l->log_time, 0, 5) : '',
@@ -54,7 +54,7 @@ class ReportService
             ->orderBy('status')
             ->orderBy('due_date')
             ->get()
-            ->map(fn ($t) => [
+            ->map(fn($t) => [
                 'id' => $t->id,
                 'title' => $t->title,
                 'status' => $t->status,
@@ -73,7 +73,7 @@ class ReportService
             ->orderBy('status')
             ->orderBy('severity')
             ->get()
-            ->map(fn ($i) => [
+            ->map(fn($i) => [
                 'id' => $i->id,
                 'title' => $i->title,
                 'status' => $i->status,
@@ -92,7 +92,7 @@ class ReportService
             ->whereBetween('cost_date', [$from, $to])
             ->orderBy('cost_date')
             ->get()
-            ->map(fn ($c) => [
+            ->map(fn($c) => [
                 'id' => $c->id,
                 'cost_date' => $c->cost_date->toDateString(),
                 'category' => $c->category,
@@ -103,7 +103,7 @@ class ReportService
 
         $attachments = \App\Models\Attachment::query()
             ->where('project_id', $project->id)
-            ->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ->whereBetween('created_at', [\Carbon\Carbon::parse($from)->startOfDay(), \Carbon\Carbon::parse($to)->endOfDay()])
             ->with('uploader:id,name,email')
             ->orderByDesc('id')
             ->limit(80)
@@ -121,14 +121,14 @@ class ReportService
 
         $media = \App\Models\ProjectMedia::query()
             ->where('project_id', $project->id)
-            ->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ->whereBetween('created_at', [\Carbon\Carbon::parse($from)->startOfDay(), \Carbon\Carbon::parse($to)->endOfDay()])
             ->orderByDesc('id')
             ->limit(80)
             ->get()
             ->map(fn($m) => [
                 'id' => $m->id,
                 'caption' => $m->caption,
-                'file_url' => $m->file_url ?? null, // adapt to your schema if needed
+                'file_url' => $m->url(), // valid method on model
                 'created_at' => $m->created_at->toDateTimeString(),
             ]);
 

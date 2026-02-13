@@ -21,22 +21,22 @@ class ProjectController extends Controller
         }
 
         // Org owner/admin sees all org projects; others see only assigned projects
-        $orgRole = $user->orgRole($org->id) ?? 'member';
+        $orgRole = $user->orgRole($org->id) ?? \App\Enums\Role::MEMBER->value;
 
         $query = Project::query()->where('organization_id', $org->id);
 
-        if (!in_array($orgRole, ['owner', 'admin'])) {
-            $query->whereHas('members', fn ($q) => $q->where('users.id', $user->id));
+        if (!in_array($orgRole, [\App\Enums\Role::OWNER->value, \App\Enums\Role::ADMIN->value])) {
+            $query->whereHas('members', fn($q) => $q->where('users.id', $user->id));
         }
 
         $projects = $query
             ->orderByDesc('id')
-            ->select(['id','name','status','location','start_date','end_date','client_name'])
+            ->select(['id', 'name', 'status', 'location', 'start_date', 'end_date', 'client_name'])
             ->paginate(10)
             ->withQueryString();
 
         return Inertia::render('App/Projects/Index', [
-            'organization' => $org->only(['id','name','type']),
+            'organization' => $org->only(['id', 'name', 'type']),
             'orgRole' => $orgRole,
             'projects' => $projects,
             'canCreate' => $request->user()->can('create', Project::class),
@@ -50,11 +50,11 @@ class ProjectController extends Controller
         $org = $request->user()->currentOrganization;
 
         return Inertia::render('App/Projects/Create', [
-            'organization' => $org->only(['id','name','type']),
+            'organization' => $org->only(['id', 'name', 'type']),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(\App\Http\Requests\StoreProjectRequest $request)
     {
         Gate::authorize('create', Project::class);
 
@@ -65,18 +65,7 @@ class ProjectController extends Controller
             return back()->with('error', 'Your plan has reached the project limit. Upgrade to create more projects.');
         }
 
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'code' => ['nullable', 'string', 'max:50'],
-            'client_name' => ['nullable', 'string', 'max:255'],
-            'client_phone' => ['nullable', 'string', 'max:50'],
-            'client_email' => ['nullable', 'email', 'max:255'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'start_date' => ['nullable', 'date'],
-            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'status' => ['required', 'in:active,paused,completed,archived'],
-            'description' => ['nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         $project = Project::create([
             ...$data,
@@ -88,15 +77,20 @@ class ProjectController extends Controller
             $request->user()->id => ['role' => 'owner'],
         ]);
 
+        \App\Http\Controllers\App\DashboardController::clearCache($org->id);
+
         return redirect()->route('projects.show', $project)->with('success', 'Project created.');
     }
 
-    public function show(Request $request, Project $project)
+    public function show(Request $request, Project $project, \App\Services\ProjectStatisticsService $statsService)
     {
         Gate::authorize('view', $project);
 
+        $metrics = $statsService->getProjectMetrics($project);
+
         return Inertia::render('App/Projects/Show', [
-            'project' => $project->only(['id','name','status','location','start_date','end_date','client_name','client_phone','client_email','description']),
+            'project' => $project->only(['id', 'name', 'status', 'location', 'start_date', 'end_date', 'client_name', 'client_phone', 'client_email', 'description', 'budget']),
+            'metrics' => $metrics,
         ]);
     }
 }

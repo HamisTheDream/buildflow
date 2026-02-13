@@ -47,23 +47,19 @@ class ProjectMediaController extends Controller
         });
 
         return Inertia::render('App/Projects/Media', [
-            'project' => $project->only(['id','name','status']),
+            'project' => $project->only(['id', 'name', 'status']),
             'canManage' => $request->user()->can('create', [ProjectMedia::class, $project]),
             'media' => $media,
         ]);
     }
 
-    public function store(Request $request, Project $project, ActivityLogger $activity)
+    public function store(\App\Http\Requests\StoreMediaRequest $request, Project $project, ActivityLogger $activity)
     {
         Gate::authorize('view', $project);
         Gate::authorize('editContent', $project);
         Gate::authorize('create', [ProjectMedia::class, $project]);
 
-        $data = $request->validate([
-            'files' => ['required', 'array', 'min:1'],
-            'files.*' => ['file', 'max:10240'], // 10MB each
-            'caption' => ['nullable', 'string', 'max:255'],
-        ]);
+        $data = $request->validated();
 
         foreach ($request->file('files') as $file) {
             $path = $file->store("projects/{$project->id}/media", 'public');
@@ -85,7 +81,7 @@ class ProjectMediaController extends Controller
         return back()->with('success', 'Files uploaded.');
     }
 
-    public function update(Request $request, Project $project, ProjectMedia $media, ActivityLogger $activity)
+    public function update(\App\Http\Requests\StoreMediaRequest $request, Project $project, ProjectMedia $media, ActivityLogger $activity)
     {
         Gate::authorize('view', $project);
         Gate::authorize('editContent', $project);
@@ -93,9 +89,7 @@ class ProjectMediaController extends Controller
 
         Gate::authorize('update', [$media, $project]);
 
-        $data = $request->validate([
-            'caption' => ['nullable', 'string', 'max:255'],
-        ]);
+        $data = $request->validated();
 
         $before = $media->replicate();
         $media->update($data);
@@ -114,7 +108,7 @@ class ProjectMediaController extends Controller
         Gate::authorize('delete', [$media, $project]);
 
         Storage::disk($media->disk)->delete($media->path);
-        
+
         $before = $media->replicate();
         $media->delete();
 

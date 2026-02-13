@@ -8,6 +8,7 @@
     },
     "devDependencies": {
         "@inertiajs/vue3": "^2.0.0",
+        "@playwright/test": "^1.58.1",
         "@tailwindcss/forms": "^0.5.3",
         "@tailwindcss/vite": "^4.0.0",
         "@types/node": "^25.0.10",
@@ -24,6 +25,9 @@
         "vue-tsc": "^3.2.4"
     },
     "dependencies": {
+        "@vueup/vue-quill": "^1.0.0-beta.11",
+        "chart.js": "^4.5.1",
+        "vue-chartjs": "^5.3.3",
         "ziggy-js": "^2.6.0"
     }
 }

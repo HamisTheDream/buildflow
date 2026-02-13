@@ -27,10 +27,10 @@ function apply() {
     <SectionCard title="Webhook events" subtitle="Raw Paystack webhook log for observability.">
       <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
         <div class="md:col-span-8">
-          <input v-model="form.q" class="w-full rounded-lg border p-2 text-sm" placeholder="Search by reference..." />
+          <input v-model="form.q" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="Search by reference..." />
         </div>
         <div class="md:col-span-3">
-          <input v-model="form.event" class="w-full rounded-lg border p-2 text-sm" placeholder="Event (e.g. charge.success)" />
+          <input v-model="form.event" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="Event (e.g. charge.success)" />
         </div>
         <div class="md:col-span-1">
           <button @click="apply" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">

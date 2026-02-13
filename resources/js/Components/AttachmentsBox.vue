@@ -2,8 +2,12 @@
 import { useForm, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import { useEntitlements } from '@/composables/useEntitlements'
+import { formatDateTime } from '@/utils/format'
 
 const { can } = useEntitlements()
+
+// Determine if user can upload (has permission + entitlement)
+const canUpload = computed(() => props.canManage && can.upload)
 
 const props = defineProps<{
   projectId: number
@@ -93,7 +97,7 @@ function prettySize(bytes:number) {
         </div>
 
         <div class="mt-2 text-xs text-gray-500">
-          {{ a.created_at }} • {{ a.uploader?.name || '—' }}
+          {{ formatDateTime(a.created_at) }} • {{ a.uploader?.name || '—' }}
         </div>
         <div class="mt-1 text-sm text-gray-700">{{ a.caption || '—' }}</div>
 

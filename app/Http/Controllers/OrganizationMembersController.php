@@ -29,7 +29,7 @@ class OrganizationMembersController extends Controller
             ->select('users.id', 'users.name', 'users.email', 'users.phone')
             ->orderBy('users.name')
             ->get()
-            ->map(fn ($u) => [
+            ->map(fn($u) => [
                 'id' => $u->id,
                 'name' => $u->name,
                 'email' => $u->email,
@@ -42,7 +42,7 @@ class OrganizationMembersController extends Controller
             ->orderByDesc('id')
             ->limit(50)
             ->get()
-            ->map(fn ($i) => [
+            ->map(fn($i) => [
                 'id' => $i->id,
                 'email' => $i->email,
                 'role' => $i->role,
@@ -52,7 +52,7 @@ class OrganizationMembersController extends Controller
             ]);
 
         return Inertia::render('App/Organization/Members', [
-            'organization' => $org->only(['id','name','type']),
+            'organization' => $org->only(['id', 'name', 'type']),
             'myRole' => $myRole,
             'members' => $members,
             'invites' => $invites,
@@ -68,11 +68,11 @@ class OrganizationMembersController extends Controller
         abort_unless($org->users()->where('users.id', $user->id)->exists(), 403);
 
         $myRole = $user->orgRole($org->id) ?? 'member';
-        abort_unless(in_array($myRole, ['owner', 'admin']), 403);
+        abort_unless(in_array($myRole, [\App\Enums\Role::OWNER->value, \App\Enums\Role::ADMIN->value]), 403);
 
         $data = $request->validate([
             'email' => ['required', 'email', 'max:255'],
-            'role' => ['required', 'in:admin,member'],
+            'role' => ['required', 'in:admin,member,viewer'],
             'expires_days' => ['required', 'integer', 'min:1', 'max:30'],
         ]);
 
@@ -125,7 +125,7 @@ class OrganizationMembersController extends Controller
         abort_unless($org && $invite->organization_id === $org->id, 403);
 
         $myRole = $user->orgRole($org->id) ?? 'member';
-        abort_unless(in_array($myRole, ['owner', 'admin']), 403);
+        abort_unless(in_array($myRole, [\App\Enums\Role::OWNER->value, \App\Enums\Role::ADMIN->value]), 403);
 
         if ($invite->accepted_at) {
             return back()->with('error', 'Invite already accepted.');
@@ -136,7 +136,7 @@ class OrganizationMembersController extends Controller
         }
 
         $invite->load('organization');
-        \Mail::to($invite->email)->send(new \App\Mail\OrganizationInviteMail($invite));
+        Mail::to($invite->email)->send(new \App\Mail\OrganizationInviteMail($invite));
 
         return back()->with('success', 'Invite resent.');
     }
@@ -150,7 +150,7 @@ class OrganizationMembersController extends Controller
         abort_unless($org && $invite->organization_id === $org->id, 403);
 
         $myRole = $user->orgRole($org->id) ?? 'member';
-        abort_unless(in_array($myRole, ['owner', 'admin']), 403);
+        abort_unless(in_array($myRole, [\App\Enums\Role::OWNER->value, \App\Enums\Role::ADMIN->value]), 403);
 
         if ($invite->accepted_at) {
             return back()->with('error', 'Cannot revoke an invite that has already been accepted.');
@@ -166,7 +166,7 @@ class OrganizationMembersController extends Controller
         $org = $user->currentOrganization;
 
         abort_unless($org, 404);
-        
+
         // Ensure member belongs to this org
         abort_unless($org->users()->where('users.id', $member->id)->exists(), 404);
 
@@ -178,7 +178,7 @@ class OrganizationMembersController extends Controller
         ]);
 
         if ($data['role'] === 'owner') {
-             return back()->with('error', 'Use Transfer Ownership flow to change the organization owner.');
+            return back()->with('error', 'Use Transfer Ownership flow to change the organization owner.');
         }
 
         $org->users()->updateExistingPivot($member->id, ['role' => $data['role']]);

@@ -15,11 +15,22 @@ class ProjectLog extends Model
         'type',
         'title',
         'body',
+        'workforce_count',
+        'weather',
+        'materials_delivered',
+        'blockers',
+        'next_day_plan',
+        'project_unit_id',
     ];
 
     protected $casts = [
         'log_date' => 'date',
     ];
+
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(ProjectUnit::class, 'project_unit_id');
+    }
 
     public function project(): BelongsTo
     {

@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { Head, useForm, usePage } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import { Head, usePage, useForm, Link } from '@inertiajs/vue3'
 import OwnerLayout from '@/Layouts/OwnerLayout.vue'
-import SectionCard from '@/Components/SectionCard.vue'
-import Pagination from '@/Components/Pagination.vue'
 import Badge from '@/Components/Badge.vue'
+import ActivityTimeline from '@/Components/Owner/CRM/ActivityTimeline.vue'
+import TaskManager from '@/Components/Owner/CRM/TaskManager.vue'
+import ConfirmationModal from '@/Components/ConfirmationModal.vue'
 import { formatDateTime, formatEnum, formatMoneyKobo } from '@/utils/format'
+import { computed } from 'vue'
 
 const page = usePage<any>()
 const admin = page.props.ownerAuth?.admin
@@ -13,9 +16,28 @@ const props = defineProps<{
   organization: any
   stats: any
   plans: { id:number; key:string; name:string }[]
-  payments: { data:any[]; links:any[] }
-  audit: { data:any[]; links:any[] }
+  timeline: { data:any[]; links:any[] }
+  tasks: any[]
 }>()
+
+const crmStages = ['lead', 'onboarding', 'active', 'risk', 'churned']
+
+// Pagination handling
+const loadMore = (url: string) => {
+    if (!url) return
+    useForm({}).get(url, { preserveScroll: true, preserveState: true })
+}
+
+
+const trashTask = (taskId: number) => {
+  if (confirm('Delete this task?')) {
+    useForm({}).delete(`/owner/tasks/${taskId}`, { preserveScroll: true })
+  }
+}
+
+const completeTask = (task: any) => {
+  useForm({ is_completed: true }).patch(`/owner/tasks/${task.id}`, { preserveScroll: true })
+}
 
 function statusTone(s:string) {
   if (s === 'active') return 'green'
@@ -25,213 +47,246 @@ function statusTone(s:string) {
   return 'gray'
 }
 
+// Action Forms
 const extendTrialForm = useForm({ days: 7, reason: '' })
 const compForm = useForm({ plan_key: 'starter', days: 30, reason: '' })
 const downgradeForm = useForm({ plan_key: 'free', reason: '' })
 const suspendForm = useForm({ reason: '' })
 const reactivateForm = useForm({ mode: 'trial', days: 7, reason: '' })
+
+// CRM Stage Modal
+const stageModal = ref({
+    show: false,
+    stage: '',
+    processing: false
+})
+
+const updateStage = (stage: string) => {
+  if (stage === props.organization.crm_stage) return
+  stageModal.value.stage = stage
+  stageModal.value.show = true
+}
+
+const confirmUpdateStage = () => {
+  stageModal.value.processing = true
+  useForm({ stage: stageModal.value.stage }).patch(`/owner/organizations/${props.organization.id}/stage`, {
+    preserveScroll: true,
+    onSuccess: () => {
+        stageModal.value.show = false
+        stageModal.value.processing = false
+    },
+    onError: () => {
+        stageModal.value.processing = false
+    }
+  })
+}
 </script>
 
 <template>
   <OwnerLayout>
-    <Head :title="`Organization — ${organization.name}`" />
+    <Head :title="organization.name" />
 
     <div class="space-y-6">
-      <SectionCard :title="organization.name" subtitle="Organization profile and subscription controls.">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div class="rounded-lg border p-4">
-            <div class="text-xs text-gray-500">Plan</div>
-            <div class="mt-2 text-lg font-bold text-gray-900">{{ organization.plan?.name || '—' }}</div>
-          </div>
-
-          <div class="rounded-lg border p-4">
-            <div class="text-xs text-gray-500">Status</div>
-            <div class="mt-2">
-              <Badge :text="formatEnum(organization.subscription_status)" :tone="statusTone(organization.subscription_status) as any" />
+      <!-- CRM Header -->
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
+        <div class="flex items-center gap-4">
+          <div class="h-16 w-16 shrink-0 rounded-xl bg-gray-50 border border-gray-100 p-2">
+            <img 
+              v-if="organization.logo_url" 
+              :src="organization.logo_url" 
+              class="h-full w-full object-contain" 
+            />
+            <div v-else class="flex h-full w-full items-center justify-center font-bold text-gray-400 text-xl">
+              {{ organization.name.charAt(0) }}
             </div>
           </div>
-
-          <div class="rounded-lg border p-4">
-            <div class="text-xs text-gray-500">Created</div>
-            <div class="mt-2 text-lg font-bold text-gray-900">{{ formatDateTime(organization.created_at) }}</div>
-          </div>
-
-          <div class="rounded-lg border p-4">
-            <div class="text-xs text-gray-500">Trial ends</div>
-            <div class="mt-2 text-lg font-bold text-gray-900">{{ formatDateTime(organization.trial_ends_at) }}</div>
-          </div>
-
-          <div class="rounded-lg border p-4">
-            <div class="text-xs text-gray-500">Paid until</div>
-            <div class="mt-2 text-lg font-bold text-gray-900">{{ formatDateTime(organization.paid_until) }}</div>
-          </div>
-
-          <div class="rounded-lg border p-4">
-            <div class="text-xs text-gray-500">Members / Projects</div>
-            <div class="mt-2 text-lg font-bold text-gray-900">{{ stats.members }} / {{ stats.projects }}</div>
-          </div>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Actions" subtitle="All actions are audited. Some require super admin.">
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div class="rounded-xl border p-4">
-            <div class="text-sm font-semibold text-gray-900">Extend trial</div>
-            <div class="mt-1 text-xs text-gray-500">Set trial status and extend trial end date.</div>
-
-            <form class="mt-3 space-y-3" @submit.prevent="extendTrialForm.post(`/owner/organizations/${organization.id}/extend-trial`)">
-              <div>
-                <label class="text-xs font-semibold text-gray-700">Days</label>
-                <input v-model="extendTrialForm.days" type="number" class="mt-1 w-full rounded-lg border p-2 text-sm" />
-              </div>
-              <div>
-                <label class="text-xs font-semibold text-gray-700">Reason (optional)</label>
-                <input v-model="extendTrialForm.reason" class="mt-1 w-full rounded-lg border p-2 text-sm" />
-              </div>
-              <button class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700" :disabled="extendTrialForm.processing">
-                Extend
-              </button>
-            </form>
-          </div>
-
-          <div class="rounded-xl border p-4">
-            <div class="text-sm font-semibold text-gray-900">Reactivate</div>
-            <div class="mt-1 text-xs text-gray-500">Bring a suspended/past due org back.</div>
-
-            <form class="mt-3 space-y-3" @submit.prevent="reactivateForm.post(`/owner/organizations/${organization.id}/reactivate`)">
-              <div>
-                <label class="text-xs font-semibold text-gray-700">Mode</label>
-                <select v-model="reactivateForm.mode" class="mt-1 w-full rounded-lg border p-2 text-sm">
-                  <option value="trial">Trial</option>
-                  <option value="active">Active</option>
-                  <option value="free">Free</option>
-                </select>
-              </div>
-
-              <div v-if="reactivateForm.mode !== 'free'">
-                <label class="text-xs font-semibold text-gray-700">Days</label>
-                <input v-model="reactivateForm.days" type="number" class="mt-1 w-full rounded-lg border p-2 text-sm" />
-              </div>
-
-              <div>
-                <label class="text-xs font-semibold text-gray-700">Reason (optional)</label>
-                <input v-model="reactivateForm.reason" class="mt-1 w-full rounded-lg border p-2 text-sm" />
-              </div>
-
-              <button class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700" :disabled="reactivateForm.processing">
-                Reactivate
-              </button>
-
-              <div v-if="!admin?.is_super" class="mt-2 text-xs text-gray-500">
-                Some reactivation modes may require super admin depending on your settings.
-              </div>
-            </form>
-          </div>
-
-          <div class="rounded-xl border p-4">
-            <div class="text-sm font-semibold text-gray-900">Comp plan (super admin)</div>
-            <div class="mt-1 text-xs text-gray-500">Give an org paid access without payment.</div>
-
-            <form class="mt-3 space-y-3" @submit.prevent="compForm.post(`/owner/organizations/${organization.id}/comp-plan`)">
-              <div>
-                <label class="text-xs font-semibold text-gray-700">Plan</label>
-                <select v-model="compForm.plan_key" class="mt-1 w-full rounded-lg border p-2 text-sm">
-                  <option v-for="p in plans" :key="p.key" :value="p.key">{{ p.name }}</option>
-                </select>
-              </div>
-              <div>
-                <label class="text-xs font-semibold text-gray-700">Days</label>
-                <input v-model="compForm.days" type="number" class="mt-1 w-full rounded-lg border p-2 text-sm" />
-              </div>
-              <div>
-                <label class="text-xs font-semibold text-gray-700">Reason (optional)</label>
-                <input v-model="compForm.reason" class="mt-1 w-full rounded-lg border p-2 text-sm" />
-              </div>
-              <button class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-black disabled:opacity-50"
-                      :disabled="compForm.processing || !admin?.is_super">
-                Comp
-              </button>
-              <div v-if="!admin?.is_super" class="mt-2 text-xs text-red-600">
-                Super admin required.
-              </div>
-            </form>
-          </div>
-
-          <div class="rounded-xl border p-4">
-            <div class="text-sm font-semibold text-gray-900">Suspend / Downgrade (super admin)</div>
-            <div class="mt-1 text-xs text-gray-500">Strong actions for abuse/non-payment.</div>
-
-            <form class="mt-3 space-y-3" @submit.prevent="suspendForm.post(`/owner/organizations/${organization.id}/suspend`)">
-              <div>
-                <label class="text-xs font-semibold text-gray-700">Suspend reason</label>
-                <input v-model="suspendForm.reason" class="mt-1 w-full rounded-lg border p-2 text-sm" placeholder="e.g. Chargeback / abuse" />
-              </div>
-              <button class="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                      :disabled="suspendForm.processing || !admin?.is_super">
-                Suspend
-              </button>
-            </form>
-
-            <form class="mt-6 space-y-3" @submit.prevent="downgradeForm.post(`/owner/organizations/${organization.id}/downgrade`)">
-              <div>
-                <label class="text-xs font-semibold text-gray-700">Downgrade to plan</label>
-                <select v-model="downgradeForm.plan_key" class="mt-1 w-full rounded-lg border p-2 text-sm">
-                  <option v-for="p in plans" :key="p.key" :value="p.key">{{ p.name }}</option>
-                </select>
-              </div>
-              <div>
-                <label class="text-xs font-semibold text-gray-700">Reason (optional)</label>
-                <input v-model="downgradeForm.reason" class="mt-1 w-full rounded-lg border p-2 text-sm" />
-              </div>
-              <button class="rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50"
-                      :disabled="downgradeForm.processing || !admin?.is_super">
-                Downgrade
-              </button>
-            </form>
-
-            <div v-if="!admin?.is_super" class="mt-2 text-xs text-red-600">
-              Super admin required for suspend/downgrade.
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ organization.name }}</h1>
+            <div class="flex items-center gap-3 mt-1 text-sm text-gray-500">
+              <span>{{ organization.owner?.name }}</span>
+              <span>&bull;</span>
+              <span>{{ organization.owner?.email }}</span>
             </div>
           </div>
         </div>
-      </SectionCard>
 
-      <SectionCard title="Payments" subtitle="Recent payments for this organization.">
-        <div class="overflow-x-auto">
-          <table class="min-w-full border rounded-lg overflow-hidden">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Ref</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Status</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Amount</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">At</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y">
-              <tr v-for="p in payments.data" :key="p.id" class="hover:bg-gray-50">
-                <td class="px-4 py-3 text-sm font-semibold text-gray-900">{{ p.reference }}</td>
-                <td class="px-4 py-3 text-sm text-gray-700">{{ formatEnum(p.status) }}</td>
-                <td class="px-4 py-3 text-sm text-gray-700">{{ formatMoneyKobo(p.amount_kobo, p.currency || 'NGN') }}</td>
-                <td class="px-4 py-3 text-sm text-gray-700">{{ formatDateTime(p.created_at) }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="flex items-center gap-3">
+           <div class="flex items-center bg-gray-50 rounded-lg p-1 border border-gray-100">
+             <button 
+                v-for="stage in crmStages" 
+                :key="stage"
+                @click="updateStage(stage)"
+                type="button"
+                class="px-3 py-1.5 text-xs font-medium rounded-md capitalize transition-all"
+                :class="organization.crm_stage === stage ? 'bg-white text-brand-600 shadow-sm ring-1 ring-gray-200' : 'text-gray-500 hover:bg-gray-200'"
+             >
+               {{ stage }}
+             </button>
+           </div>
         </div>
-        <Pagination :links="payments.links" />
-      </SectionCard>
+      </div>
 
-      <SectionCard title="Audit trail" subtitle="Owner actions taken on this organization.">
-        <div class="space-y-2">
-          <div v-for="l in audit.data" :key="l.id" class="rounded-xl border p-4">
-            <div class="text-sm font-semibold text-gray-900">{{ formatEnum(l.action) }}</div>
-            <div class="mt-1 text-xs text-gray-500">
-              {{ formatDateTime(l.created_at) }} • {{ l.admin?.name }} ({{ l.admin?.email }})
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- LEFT: Context (3 cols) -->
+        <div class="lg:col-span-3 space-y-6">
+          <!-- Overview Card -->
+          <div class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm space-y-4">
+            <h3 class="font-semibold text-gray-900 border-b border-gray-100 pb-2">Overview</h3>
+            
+            <div>
+              <div class="text-xs text-gray-500">Plan</div>
+              <div class="font-medium text-gray-900">{{ organization.plan?.name || '—' }}</div>
             </div>
-            <div v-if="l.reason" class="mt-2 text-sm text-gray-700">{{ l.reason }}</div>
+            
+            <div>
+              <div class="text-xs text-gray-500">Status</div>
+              <div class="mt-1"><Badge :text="formatEnum(organization.subscription_status)" :tone="statusTone(organization.subscription_status) as any" /></div>
+            </div>
+
+            <div>
+              <div class="text-xs text-gray-500">Created</div>
+              <div class="font-medium text-gray-900">{{ formatDateTime(organization.created_at) }}</div>
+            </div>
+
+            <div v-if="organization.trial_ends_at">
+              <div class="text-xs text-gray-500">Trial Ends</div>
+              <div class="font-medium text-gray-900">{{ formatDateTime(organization.trial_ends_at) }}</div>
+            </div>
+
+             <div v-if="organization.paid_until">
+              <div class="text-xs text-gray-500">Paid Until</div>
+              <div class="font-medium text-gray-900">{{ formatDateTime(organization.paid_until) }}</div>
+            </div>
+          </div>
+
+          <!-- Stats Card -->
+           <div class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm space-y-4">
+            <h3 class="font-semibold text-gray-900 border-b border-gray-100 pb-2">Metrics</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <div class="text-2xl font-bold text-gray-900">{{ stats.members }}</div>
+                <div class="text-xs text-gray-500">Members</div>
+              </div>
+              <div>
+                <div class="text-2xl font-bold text-gray-900">{{ stats.projects }}</div>
+                <div class="text-xs text-gray-500">Projects</div>
+              </div>
+            </div>
           </div>
         </div>
-        <Pagination :links="audit.links" />
-      </SectionCard>
+
+        <!-- CENTER: Activity Feed (6 cols) -->
+        <div class="lg:col-span-6">
+          <ActivityTimeline 
+            :organization-id="organization.id"
+            :notes="timeline.data"
+          />
+          <!-- Pagination -->
+          <div class="mt-4 flex justify-center gap-2" v-if="timeline.links.length > 3">
+             <template v-for="(link, key) in timeline.links" :key="key">
+                <Link 
+                    v-if="link.url"
+                    :href="link.url"
+                    v-html="link.label"
+                    class="px-3 py-1 text-sm rounded border"
+                    :class="link.active ? 'bg-brand-50 border-brand-200 text-brand-700' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'"
+                    preserve-scroll
+                />
+             </template>
+          </div>
+        </div>
+
+        <!-- RIGHT: Actions & Tasks (3 cols) -->
+        <div class="lg:col-span-3 space-y-6">
+          <!-- Task Manager -->
+          <TaskManager :organization-id="organization.id">
+            <div v-for="task in tasks" :key="task.id" class="flex gap-2 items-start group p-2 hover:bg-gray-50 rounded-lg transition">
+              <button 
+                @click="completeTask(task)"
+                class="mt-1 h-4 w-4 shrink-0 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+              ><span class="sr-only">Complete</span><div class="h-3 w-3 border-2 border-gray-400 rounded-full hover:border-brand-500"></div></button>
+              
+              <div class="flex-1 min-w-0">
+                <div class="text-sm text-gray-900">{{ task.content }}</div>
+                <div class="flex items-center gap-2 mt-1">
+                   <div v-if="task.due_at" class="text-xs text-red-500 bg-red-50 px-1.5 rounded">{{ formatDateTime(task.due_at) }}</div>
+                    <img v-if="task.assigned_to?.avatar_url" :src="task.assigned_to.avatar_url" class="h-4 w-4 rounded-full" />
+                </div>
+              </div>
+
+              <button @click="trashTask(task.id)" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500">
+                &times;
+              </button>
+            </div>
+             <div v-if="tasks.length === 0" class="text-center py-4 text-sm text-gray-500">
+              No active tasks.
+            </div>
+          </TaskManager>
+
+          <!-- Quick Actions Accordion -->
+           <div class="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+             <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 font-semibold text-gray-900">Admin Actions</div>
+             
+             <div class="p-4 space-y-6">
+                <!-- Reactivate -->
+                <details class="group">
+                  <summary class="flex cursor-pointer items-center justify-between text-sm font-medium text-gray-900">
+                    Reactivate Account
+                    <span class="ml-2 transition group-open:rotate-180">▼</span>
+                  </summary>
+                   <form class="mt-3 space-y-3" @submit.prevent="reactivateForm.post(`/owner/organizations/${organization.id}/reactivate`)">
+                    <select v-model="reactivateForm.mode" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 text-sm focus:border-brand-500 focus:ring-brand-500">
+                      <option value="trial">Trial</option>
+                      <option value="active">Active</option>
+                      <option value="free">Free</option>
+                    </select>
+                    <div v-if="reactivateForm.mode !== 'free'">
+                       <input v-model="reactivateForm.days" type="number" placeholder="Days" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 text-sm focus:border-brand-500 focus:ring-brand-500" />
+                    </div>
+                    <button class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white" :disabled="reactivateForm.processing">Reactivate</button>
+                   </form>
+                </details>
+
+                <!-- Extend Trial -->
+                 <details class="group">
+                  <summary class="flex cursor-pointer items-center justify-between text-sm font-medium text-gray-900">
+                    Extend Trial
+                    <span class="ml-2 transition group-open:rotate-180">▼</span>
+                  </summary>
+                   <form class="mt-3 space-y-3" @submit.prevent="extendTrialForm.post(`/owner/organizations/${organization.id}/extend-trial`)">
+                       <input v-model="extendTrialForm.days" type="number" placeholder="Days" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 text-sm focus:border-brand-500 focus:ring-brand-500" />
+                       <input v-model="extendTrialForm.reason" placeholder="Reason" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 text-sm focus:border-brand-500 focus:ring-brand-500" />
+                    <button class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white" :disabled="extendTrialForm.processing">Extend</button>
+                   </form>
+                </details>
+
+                <!-- Suspend -->
+                <details class="group" v-if="admin?.is_super">
+                  <summary class="flex cursor-pointer items-center justify-between text-sm font-medium text-red-600">
+                    Suspend Organization
+                    <span class="ml-2 transition group-open:rotate-180">▼</span>
+                  </summary>
+                   <form class="mt-3 space-y-3" @submit.prevent="suspendForm.post(`/owner/organizations/${organization.id}/suspend`)">
+                       <input v-model="suspendForm.reason" placeholder="Reason (Required)" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 text-sm focus:border-brand-500 focus:ring-brand-500" />
+                    <button class="w-full rounded-lg bg-red-600 px-3 py-2 text-sm text-white" :disabled="suspendForm.processing">Suspend</button>
+                   </form>
+                </details>
+             </div>
+           </div>
+        </div>
+
+      </div>
     </div>
+    <!-- Confirm Stage Change -->
+    <ConfirmationModal
+        :show="stageModal.show"
+        title="Update CRM Stage"
+        :content="`Are you sure you want to move this organization to the '${stageModal.stage}' stage?`"
+        confirm-text="Update Stage"
+        :processing="stageModal.processing"
+        @close="stageModal.show = false"
+        @confirm="confirmUpdateStage"
+    />
   </OwnerLayout>
 </template>

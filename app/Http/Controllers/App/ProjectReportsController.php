@@ -33,7 +33,7 @@ class ProjectReportsController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $reports->getCollection()->transform(fn ($r) => [
+        $reports->getCollection()->transform(fn($r) => [
             'id' => $r->id,
             'from_date' => $r->from_date->toDateString(),
             'to_date' => $r->to_date->toDateString(),
@@ -52,9 +52,21 @@ class ProjectReportsController extends Controller
             ] : null,
         ]);
 
+        // --- Decision Metrics ---
+        $stats = [
+            'total_count' => ProjectReport::where('project_id', $project->id)->count(),
+            'active_shares' => ProjectReport::where('project_id', $project->id)
+                ->where('share_expires_at', '>', now())
+                ->count(),
+            'last_generated_at' => ProjectReport::where('project_id', $project->id)
+                ->latest()
+                ->value('created_at'),
+        ];
+
         return Inertia::render('App/Projects/Reports', [
-            'project' => $project->only(['id','name','status']),
+            'project' => $project->only(['id', 'name', 'status']),
             'reports' => $reports,
+            'metrics' => $stats,
         ]);
     }
 
@@ -68,7 +80,7 @@ class ProjectReportsController extends Controller
             'from_date' => ['required', 'date'],
             'to_date' => ['required', 'date', 'after_or_equal:from_date'],
             'title' => ['nullable', 'string', 'max:255'],
-            'type' => ['required', 'in:daily,summary,cost'],
+            'type' => ['required', 'in:daily,weekly,cost,incident'],
             'share_expires_days' => ['nullable', 'integer', 'min:1', 'max:365'],
             'share_password' => ['nullable', 'string', 'min:4', 'max:100'],
             'options' => ['nullable', 'array'],
@@ -103,17 +115,22 @@ class ProjectReportsController extends Controller
 
         $title = $data['title'] ?: "{$project->name} Report ({$from} to {$to})";
 
-        $pdfBytes = $reports->renderPdf([
-            'project' => $project,
-            'from' => $from,
-            'to' => $to,
-            'title' => $title,
-            'subtitle' => Str::title($data['type']) . ' Report',
-            'generatedAt' => now()->toDateTimeString(),
-            'generatedBy' => $request->user()->name,
-            'options' => $options,
-            ...$payload,
-        ]);
+        try {
+            $pdfBytes = $reports->renderPdf([
+                'project' => $project,
+                'from' => $from,
+                'to' => $to,
+                'title' => $title,
+                'subtitle' => Str::title($data['type']) . ' Report',
+                'generatedAt' => now()->toDateTimeString(),
+                'generatedBy' => $request->user()->name,
+                'options' => $options,
+                ...$payload,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("PDF Generation Failed: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'Failed to generate PDF report: ' . $e->getMessage());
+        }
 
         $token = Str::random(40);
         $fileName = "projects/{$project->id}/reports/" . now()->format('Ymd_His') . "_" . Str::slug($project->name) . ".pdf";
@@ -147,7 +164,7 @@ class ProjectReportsController extends Controller
 
         // Notify owner/pm
         $recipients = $project->members()
-            ->wherePivotIn('role', ['owner','pm'])
+            ->wherePivotIn('role', ['owner', 'pm'])
             ->get();
 
         foreach ($recipients as $u) {
@@ -156,7 +173,7 @@ class ProjectReportsController extends Controller
 
         // Send Email if requested
         if (!empty($data['send_email']) && !empty($data['email_to'])) {
-             try {
+            try {
                 Mail::to($data['email_to'])->send(new ProjectReportMail(
                     projectName: $project->name,
                     title: $report->title,
@@ -223,14 +240,14 @@ class ProjectReportsController extends Controller
         // Load branding & evidence
         $project = $report->project()->with('organization')->first();
         $org = $project->organization;
-        
+
         $from = $report->from_date->toDateString();
         $to = $report->to_date->toDateString();
 
         // Evidence: Attachments (across project) within range
         $attachments = Attachment::query()
             ->where('project_id', $project->id)
-            ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
             ->with('uploader:id,name')
             ->orderByDesc('id')
             ->limit(80)
@@ -249,7 +266,7 @@ class ProjectReportsController extends Controller
         // Evidence: Media within range
         $media = ProjectMedia::query()
             ->where('project_id', $project->id)
-            ->whereBetween('created_at', [$from.' 00:00:00', $to.' 23:59:59'])
+            ->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
             ->orderByDesc('id')
             ->limit(80)
             ->get()

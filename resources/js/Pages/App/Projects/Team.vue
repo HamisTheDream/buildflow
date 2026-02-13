@@ -5,6 +5,7 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   project: { id: number; name: string }
+  canManage: boolean
   orgMembers: { id: number; name: string; email: string; org_role: string }[]
   projectMembers: { id: number; name: string; email: string; project_role: string }[]
   projectMemberIds: number[]
@@ -36,6 +37,12 @@ function removeMember(userId: number) {
 const availableOrgMembers = computed(() =>
   props.orgMembers.filter(m => !props.projectMemberIds.includes(m.id))
 )
+
+// Helper to get role label from value
+function getRoleLabel(roleValue: string): string {
+  const role = props.roles.find(r => r.value === roleValue)
+  return role?.label ?? roleValue
+}
 </script>
 
 <template>
@@ -50,8 +57,8 @@ const availableOrgMembers = computed(() =>
     </div>
 
     <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <!-- Add member -->
-        <div class="rounded-xl bg-white p-6 shadow">
+        <!-- Add member - Only show to managers -->
+        <div v-if="canManage" class="rounded-xl bg-white p-6 shadow">
           <h2 class="text-lg font-semibold text-gray-900">Add member</h2>
           <p class="mt-1 text-sm text-gray-600">Assign an organization member to this project.</p>
 
@@ -88,9 +95,12 @@ const availableOrgMembers = computed(() =>
         </div>
 
         <!-- Current project members -->
-        <div class="lg:col-span-2 rounded-xl bg-white p-6 shadow">
+        <div :class="canManage ? 'lg:col-span-2' : 'lg:col-span-3'" class="rounded-xl bg-white p-6 shadow">
           <h2 class="text-lg font-semibold text-gray-900">Members on this project</h2>
-          <p class="mt-1 text-sm text-gray-600">Update roles or remove access.</p>
+          <p class="mt-1 text-sm text-gray-600">
+            <template v-if="canManage">Update roles or remove access.</template>
+            <template v-else>View project team members.</template>
+          </p>
 
           <div class="mt-4 space-y-2">
             <div
@@ -104,20 +114,30 @@ const availableOrgMembers = computed(() =>
               </div>
 
               <div class="flex flex-wrap items-center gap-2">
-                <select
-                  class="rounded-lg border p-2 text-sm"
-                  :value="m.project_role"
-                  @change="updateRole(m.id, ($event.target as HTMLSelectElement).value)"
-                >
-                  <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
-                </select>
+                <!-- Manager view: show dropdown and remove button -->
+                <template v-if="canManage">
+                  <select
+                    class="rounded-lg border p-2 text-sm"
+                    :value="m.project_role"
+                    @change="updateRole(m.id, ($event.target as HTMLSelectElement).value)"
+                  >
+                    <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
+                  </select>
 
-                <button
-                  class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 hover:bg-red-100"
-                  @click="removeMember(m.id)"
-                >
-                  Remove
-                </button>
+                  <button
+                    class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 hover:bg-red-100"
+                    @click="removeMember(m.id)"
+                  >
+                    Remove
+                  </button>
+                </template>
+
+                <!-- Non-manager view: show read-only role badge -->
+                <template v-else>
+                  <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                    {{ getRoleLabel(m.project_role) }}
+                  </span>
+                </template>
               </div>
             </div>
 
@@ -129,3 +149,4 @@ const availableOrgMembers = computed(() =>
     </div>
   </ProjectLayout>
 </template>
+

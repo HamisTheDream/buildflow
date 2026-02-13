@@ -8,6 +8,22 @@ use App\Models\User;
 class ProjectPolicy
 {
     /**
+     * Determine whether the user can create projects.
+     * Org owners and admins can create projects.
+     */
+    public function create(User $user): bool
+    {
+        $org = $user->currentOrganization;
+
+        if (!$org) {
+            return false;
+        }
+
+        // Org owners and admins can create projects
+        return $user->isOrgOwner($org->id) || $user->isOrgAdminOrAbove($org->id);
+    }
+
+    /**
      * Determine whether the user can view the project.
      */
     public function view(User $user, Project $project): bool
@@ -16,9 +32,9 @@ class ProjectPolicy
         // Note: projectRole() queries the DB, it's safer to check existence first if perf matters,
         // but for now we rely on the helper or direct relation check.
         // Let's stick to the definition: Member of access OR Org Admin.
-        
+
         return $project->members()->where('users.id', $user->id)->exists()
-            || $user->isOrgAdmin($project->organization_id);
+            || $user->isOrgAdminOrAbove($project->organization_id);
     }
 
     /**
@@ -29,12 +45,12 @@ class ProjectPolicy
     {
         // Viewer is read-only ALWAYS
         $role = $user->projectRole($project->id);
-        
+
         if ($role === 'viewer') return false;
 
         // Allow: owner/pm/accountant/clerk OR org admin
         return in_array($role, ['owner', 'pm', 'accountant', 'clerk'], true)
-            || $user->isOrgAdmin($project->organization_id);
+            || $user->isOrgAdminOrAbove($project->organization_id);
     }
 
     /**
@@ -44,7 +60,7 @@ class ProjectPolicy
     {
         // Only project owner OR org admin
         return $user->isProjectOwner($project->id)
-            || $user->isOrgAdmin($project->organization_id);
+            || $user->isOrgAdminOrAbove($project->organization_id);
     }
 
     /**
@@ -76,15 +92,15 @@ class ProjectPolicy
         return $this->editContent($user, $project);
     }
 
-     /**
+    /**
      * Determine whether the user can email reports.
      */
     public function email(User $user, Project $project): bool
     {
         return $this->editContent($user, $project);
     }
-    
-     /**
+
+    /**
      * Determine whether the user can delete reports.
      */
     public function delete(User $user, Project $project): bool
@@ -94,5 +110,4 @@ class ProjectPolicy
         // For 'delete' of items, usually same as editContent in this system unless specified.
         return $this->editContent($user, $project);
     }
-
 }

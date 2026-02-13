@@ -17,12 +17,23 @@ class ProjectCost extends Model
         'amount',
         'reference',
         'description',
+        'status', // pending, approved, paid, rejected
+        'is_paid',
+        'rejection_reason',
+        'project_unit_id',
     ];
 
     protected $casts = [
         'cost_date' => 'date',
         'amount' => 'decimal:2',
     ];
+
+
+
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(ProjectUnit::class, 'project_unit_id');
+    }
 
     public function project(): BelongsTo
     {

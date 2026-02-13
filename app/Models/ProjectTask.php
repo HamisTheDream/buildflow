@@ -11,6 +11,7 @@ class ProjectTask extends Model
         'project_id',
         'created_by',
         'assigned_to',
+        'project_unit_id',
         'title',
         'description',
         'status',
@@ -30,6 +31,11 @@ class ProjectTask extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(ProjectUnit::class, 'project_unit_id');
     }
 
     public function assignee(): BelongsTo

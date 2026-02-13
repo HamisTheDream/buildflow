@@ -68,11 +68,11 @@ const noteForm = useForm({ note: '' })
           <form class="mt-3 space-y-3" @submit.prevent="verifyForm.post('/owner/billing/payments/verify')">
             <div>
               <label class="text-xs font-semibold text-gray-700">Reference</label>
-              <input v-model="verifyForm.reference" class="mt-1 w-full rounded-lg border p-2 text-sm" />
+              <input v-model="verifyForm.reference" class="mt-1 w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" />
             </div>
             <div>
               <label class="text-xs font-semibold text-gray-700">Reason (optional)</label>
-              <input v-model="verifyForm.reason" class="mt-1 w-full rounded-lg border p-2 text-sm" />
+              <input v-model="verifyForm.reason" class="mt-1 w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" />
             </div>
 
             <button
@@ -91,7 +91,7 @@ const noteForm = useForm({ note: '' })
 
       <SectionCard title="Notes" subtitle="Internal notes for ops.">
         <form class="space-y-3" @submit.prevent="noteForm.post(`/owner/billing/payments/${payment.id}/notes`, { preserveScroll:true, onSuccess: () => noteForm.note='' })">
-          <textarea v-model="noteForm.note" class="w-full rounded-lg border p-2 text-sm" rows="3" placeholder="Add a note..."></textarea>
+          <textarea v-model="noteForm.note" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" rows="3" placeholder="Add a note..."></textarea>
           <button class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700" :disabled="noteForm.processing">
             Add note
           </button>

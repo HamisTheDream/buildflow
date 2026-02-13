@@ -17,13 +17,16 @@ class ProjectCostsController extends Controller
     {
         Gate::authorize('view', $project);
 
-        $categories = ['material','labor','equipment','transport','misc','service','permit','fuel','security'];
-        $payments = ['cash','transfer','card','cheque','other'];
+        $categories = ['material', 'labor', 'equipment', 'transport', 'misc', 'service', 'permit', 'fuel', 'security'];
+        $payments = ['cash', 'transfer', 'card', 'cheque', 'other'];
+        $statuses = ['pending', 'approved', 'paid', 'rejected'];
 
         $filters = $request->validate([
-            'category' => ['nullable', 'in:'.implode(',', $categories)],
+            'category' => ['nullable', 'in:' . implode(',', $categories)],
+            'status' => ['nullable', 'in:' . implode(',', $statuses)],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date'],
+            'unit' => ['nullable', 'integer'],
             'q' => ['nullable', 'string', 'max:80'],
         ]);
 
@@ -31,30 +34,46 @@ class ProjectCostsController extends Controller
             ->where('project_id', $project->id)
             ->with([
                 'creator:id,name,email',
+                'unit:id,name',
                 'attachments.uploader:id,name,email',
             ]);
 
         if (!empty($filters['category'])) $query->where('category', $filters['category']);
+        if (!empty($filters['status'])) $query->where('status', $filters['status']);
         if (!empty($filters['from'])) $query->where('cost_date', '>=', $filters['from']);
         if (!empty($filters['to'])) $query->where('cost_date', '<=', $filters['to']);
+        if (!empty($filters['unit'])) $query->where('project_unit_id', (int)$filters['unit']);
         if (!empty($filters['q'])) {
             $q = $filters['q'];
             $query->where(function ($qq) use ($q) {
                 $qq->where('vendor', 'like', "%{$q}%")
-                   ->orWhere('reference', 'like', "%{$q}%")
-                   ->orWhere('description', 'like', "%{$q}%");
+                    ->orWhere('reference', 'like', "%{$q}%")
+                    ->orWhere('description', 'like', "%{$q}%");
             });
         }
 
-        // totals
-        $filteredTotal = (clone $query)->sum('amount');
+        // --- Decision Metrics ---
+        // 1. Pending Approvals
+        $pendingCount = (clone $query)->where('status', 'pending')->count();
+        $pendingAmount = (clone $query)->where('status', 'pending')->sum('amount');
 
-        $byCategory = (clone $query)
+        // 2. Unpaid but Approved (Accounts Payable)
+        $unpaidCount = (clone $query)->where('status', 'approved')->count();
+        $unpaidAmount = (clone $query)->where('status', 'approved')->sum('amount');
+
+        // 3. Total Spend (Approved Only) vs Budget
+        // Note: We use the *unfiltered* total for the project budget bar, not the filtered query
+        $rawProjectCosts = ProjectCost::where('project_id', $project->id);
+        $totalSpend = (clone $rawProjectCosts)->whereIn('status', ['approved', 'paid'])->sum('amount');
+        $totalBudget = (float) $project->budget;
+
+        $byCategory = (clone $rawProjectCosts)
             ->selectRaw('category, SUM(amount) as total')
+            ->whereIn('status', ['approved', 'paid'])
             ->groupBy('category')
             ->orderByDesc('total')
             ->get()
-            ->map(fn ($r) => [
+            ->map(fn($r) => [
                 'category' => $r->category,
                 'total' => (float)$r->total,
             ]);
@@ -65,7 +84,7 @@ class ProjectCostsController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        $costs->getCollection()->transform(fn ($c) => [
+        $costs->getCollection()->transform(fn($c) => [
             'id' => $c->id,
             'cost_date' => $c->cost_date->toDateString(),
             'category' => $c->category,
@@ -74,8 +93,13 @@ class ProjectCostsController extends Controller
             'amount' => (float)$c->amount,
             'reference' => $c->reference,
             'description' => $c->description,
+            'status' => $c->status,
+            'is_paid' => $c->status === 'paid',
+            'rejection_reason' => $c->rejection_reason,
+            'project_unit_id' => $c->project_unit_id,
+            'unit' => $c->unit ? $c->unit->only('id', 'name') : null,
             'created_at' => $c->created_at->toDateTimeString(),
-            'creator' => $c->creator ? $c->creator->only('id','name','email') : null,
+            'creator' => $c->creator ? $c->creator->only('id', 'name', 'email') : null,
             'attachments' => $c->attachments->map(fn($a) => [
                 'id' => $a->id,
                 'url' => $a->url(),
@@ -94,43 +118,45 @@ class ProjectCostsController extends Controller
             ])->values(),
         ]);
 
+        $units = $project->units()->orderBy('name')->select('id', 'name')->get();
+
         return Inertia::render('App/Projects/Costs', [
-            'project' => $project->only(['id','name','status']),
+            'project' => $project->only(['id', 'name', 'status']),
             'canManage' => $request->user()->can('create', [ProjectCost::class, $project]),
             'categories' => $categories,
             'payments' => $payments,
+            'statuses' => $statuses,
+            'units' => $units,
             'filters' => [
                 'category' => $request->query('category', ''),
+                'status' => $request->query('status', ''),
                 'from' => $request->query('from', ''),
                 'to' => $request->query('to', ''),
+                'unit' => $request->query('unit', ''),
                 'q' => $request->query('q', ''),
             ],
-            'totals' => [
-                'filtered_total' => (float)$filteredTotal,
+            'metrics' => [
+                'pending_count' => $pendingCount,
+                'pending_amount' => (float)$pendingAmount,
+                'unpaid_count' => $unpaidCount,
+                'unpaid_amount' => (float)$unpaidAmount,
+                'total_spend' => (float)$totalSpend,
+                'total_budget' => (float)$totalBudget,
+            ],
+            'analysis' => [
                 'by_category' => $byCategory,
             ],
             'costs' => $costs,
         ]);
     }
 
-    public function store(Request $request, Project $project, ActivityLogger $activity)
+    public function store(\App\Http\Requests\StoreCostRequest $request, Project $project, ActivityLogger $activity)
     {
         Gate::authorize('view', $project);
         Gate::authorize('editContent', $project);
         Gate::authorize('create', [ProjectCost::class, $project]);
 
-        $categories = ['material','labor','equipment','transport','misc','service','permit','fuel','security'];
-        $payments = ['cash','transfer','card','cheque','other'];
-
-        $data = $request->validate([
-            'cost_date' => ['required', 'date'],
-            'category' => ['required', 'in:'.implode(',', $categories)],
-            'vendor' => ['nullable', 'string', 'max:255'],
-            'payment_method' => ['required', 'in:'.implode(',', $payments)],
-            'amount' => ['required', 'numeric', 'min:0'],
-            'reference' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         $cost = ProjectCost::create([
             'project_id' => $project->id,
@@ -143,25 +169,14 @@ class ProjectCostsController extends Controller
         return back()->with('success', 'Cost added.');
     }
 
-    public function update(Request $request, Project $project, ProjectCost $cost, ActivityLogger $activity)
+    public function update(\App\Http\Requests\StoreCostRequest $request, Project $project, ProjectCost $cost, ActivityLogger $activity)
     {
         Gate::authorize('view', $project);
         Gate::authorize('editContent', $project);
         abort_unless($cost->project_id === $project->id, 404);
         Gate::authorize('update', [$cost, $project]);
 
-        $categories = ['material','labor','equipment','transport','misc','service','permit','fuel','security'];
-        $payments = ['cash','transfer','card','cheque','other'];
-
-        $data = $request->validate([
-            'cost_date' => ['required', 'date'],
-            'category' => ['required', 'in:'.implode(',', $categories)],
-            'vendor' => ['nullable', 'string', 'max:255'],
-            'payment_method' => ['required', 'in:'.implode(',', $payments)],
-            'amount' => ['required', 'numeric', 'min:0'],
-            'reference' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         $before = $cost->replicate();
         $cost->update($data);

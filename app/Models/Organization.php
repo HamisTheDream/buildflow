@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Organization extends Model
 {
+    use HasFactory;
     protected static function booted()
     {
         static::creating(function ($org) {
@@ -26,12 +28,14 @@ class Organization extends Model
         'currency',
         'plan_id',
         'subscription_status',
+        'crm_stage',
         'trial_ends_at',
         'brand_name',
         'brand_logo_path',
         'brand_email',
         'brand_phone',
         'brand_address',
+        'brand_color',
     ];
 
     protected $casts = [
@@ -42,6 +46,16 @@ class Organization extends Model
         'last_dunning_sent_at' => 'datetime',
         'last_payment_failed_at' => 'datetime',
     ];
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(OrganizationNote::class)->orderByDesc('created_at');
+    }
+
+    public function crmTasks(): HasMany
+    {
+        return $this->hasMany(OrganizationTask::class)->orderBy('due_at');
+    }
 
     public function users(): BelongsToMany
     {
@@ -117,15 +131,22 @@ class Organization extends Model
     public function hasAppAccess(): bool
     {
         if ($this->subscription_status === 'suspended') return false;
+        if ($this->subscription_status === 'blocked') return false;
+        if ($this->subscription_status === 'expired') return false;
+
+        // Null or empty status = allow access (dev/free tier fallback)
+        if (empty($this->subscription_status)) return true;
 
         if ($this->subscription_status === 'free') return true;
         if ($this->subscription_status === 'trial') return $this->isTrialActive();
         if ($this->subscription_status === 'active') return $this->isPaidActive();
         if ($this->subscription_status === 'past_due') return $this->isInGrace();
+        if ($this->subscription_status === 'grace') return $this->isInGrace();
 
+        // Unknown status = deny access (fail closed for security)
         return false;
     }
-    
+
     // Kept for backward compatibility if used elsewhere, aliased to hasAppAccess
     public function isActiveAccess(): bool
     {
@@ -140,6 +161,12 @@ class Organization extends Model
     public function billingEmail(): ?string
     {
         if (!empty($this->brand_email)) return $this->brand_email;
-        return $this->ownerUser()?->email;
+
+        // Use the already-loaded relationship if available, otherwise query
+        $owner = $this->relationLoaded('users')
+            ? $this->users->firstWhere('pivot.role', 'owner')
+            : $this->ownerUser();
+
+        return $owner?->email;
     }
 }

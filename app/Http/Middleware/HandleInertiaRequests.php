@@ -32,15 +32,26 @@ class HandleInertiaRequests extends Middleware
         $shared = parent::share($request);
 
         $user = $request->user();
-        
+
         // Only resolve org for actual Users, not Admins
         $isUser = $user instanceof \App\Models\User;
         $org = $isUser ? \App\Support\CurrentOrg::forUser($user) : null;
+
+        // Compute org role once to avoid duplicate queries
+        $orgRole = ($isUser && $user && $org) ? $user->orgRole($org->id) : null;
 
         // Only compute for logged-in users
         $entitlements = ($isUser && $user)
             ? app(\App\Services\EntitlementsService::class)->forOrg($org)
             : null;
+
+        // Resolve owner admin once instead of 6+ Auth::guard() calls
+        $ownerAdmin = \Illuminate\Support\Facades\Auth::guard('owner')->user();
+
+        // Cache site settings to avoid DB query on every request
+        $siteSettings = cache()->remember('site_settings', 3600, function () {
+            return \App\Models\Setting::whereIn('key', ['site_title', 'site_description', 'site_keywords', 'site_icon'])->pluck('value', 'key');
+        });
 
         return array_merge($shared, [
             'csrf_token' => csrf_token(),
@@ -51,6 +62,7 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'phone' => $user->phone,
                     'avatar_path' => $user->avatar_path,
+                    'avatar_url' => $user->avatar_path ? asset('storage/' . $user->avatar_path) : null,
                     'is_invited_only' => $user->is_invited_only,
                     'current_organization_id' => $user->current_organization_id,
                 ] : null,
@@ -67,22 +79,42 @@ class HandleInertiaRequests extends Middleware
                         'dunning_stage' => (int)$org->dunning_stage,
                     ],
                 ] : null,
+                'orgRole' => $orgRole,
+                'modules' => $orgRole ? $this->getAccessibleModulesFromRole($orgRole) : [],
             ],
             'ownerAuth' => [
-                'admin' => \Illuminate\Support\Facades\Auth::guard('owner')->check()
-                    ? [
-                        'id' => \Illuminate\Support\Facades\Auth::guard('owner')->user()->id,
-                        'name' => \Illuminate\Support\Facades\Auth::guard('owner')->user()->name,
-                        'email' => \Illuminate\Support\Facades\Auth::guard('owner')->user()->email,
-                        'is_super' => (bool) \Illuminate\Support\Facades\Auth::guard('owner')->user()->is_super,
-                    ]
-                    : null,
+                'admin' => $ownerAdmin ? [
+                    'id' => $ownerAdmin->id,
+                    'name' => $ownerAdmin->name,
+                    'email' => $ownerAdmin->email,
+                    'avatar_path' => $ownerAdmin->avatar_path,
+                    'avatar_url' => $ownerAdmin->avatar_path
+                        ? asset('storage/' . $ownerAdmin->avatar_path)
+                        : null,
+                    'is_super' => (bool) $ownerAdmin->is_super,
+                ] : null,
             ],
             'entitlements' => $entitlements,
             'flash' => [
-                'success' => fn () => $request->session()->get('success'),
-                'error' => fn () => $request->session()->get('error'),
+                'success' => fn() => $request->session()->get('success'),
+                'error' => fn() => $request->session()->get('error'),
             ],
+            'site_settings' => $siteSettings,
         ]);
+    }
+
+
+    private function getAccessibleModulesFromRole(string $role): array
+    {
+        $allowedModules = config("erp.roles.{$role}.modules", []);
+        $allModules = config('erp.modules', []);
+
+        $accessible = [];
+        foreach ($allowedModules as $moduleKey) {
+            if (isset($allModules[$moduleKey])) {
+                $accessible[$moduleKey] = $allModules[$moduleKey];
+            }
+        }
+        return $accessible;
     }
 }

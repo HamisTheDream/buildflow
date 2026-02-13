@@ -10,15 +10,28 @@ use Inertia\Inertia;
 
 
 Route::get('/', function () {
+    $plans = \App\Models\Plan::all();
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
+        'plans' => $plans,
     ]);
 });
 
-Route::get('/invites/{token}', [InviteAcceptanceController::class, 'show'])->name('invites.show');
+
+// Blog routes are defined at the bottom with the BlogController
+
+Route::get('/contact', function () {
+    return Inertia::render('Public/Contact');
+})->name('contact');
+
+Route::get('/terms', function () {
+    return Inertia::render('Public/Terms');
+})->name('terms');
+
+Route::get('/privacy', function () {
+    return Inertia::render('Public/Privacy');
+})->name('privacy');
 
 
 Route::middleware('guest')->group(function () {
@@ -32,8 +45,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/app/settings/profile', [ProfileSettingsController::class, 'edit'])->name('settings.profile');
-Route::patch('/app/settings/profile', [ProfileSettingsController::class, 'updateProfile'])->name('settings.profile.update');
-Route::patch('/app/settings/security/password', [ProfileSettingsController::class, 'updatePassword'])->name('settings.password.update');
+    Route::patch('/app/settings/profile', [ProfileSettingsController::class, 'updateProfile'])->name('settings.profile.update');
+    Route::patch('/app/settings/security/password', [ProfileSettingsController::class, 'updatePassword'])->name('settings.password.update');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -41,27 +54,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/app/billing', [App\Http\Controllers\App\OrgBillingController::class, 'index'])->name('billing');
     Route::post('/app/billing/upgrade', [App\Http\Controllers\App\PaystackBillingController::class, 'upgrade'])->name('billing.upgrade');
     Route::get('/app/billing/paystack/callback', [App\Http\Controllers\App\PaystackBillingController::class, 'callback'])->name('billing.paystack.callback');
-    
+
     // Support
-    Route::get('/app/support', [App\Http\Controllers\App\Support\SupportTicketController::class, 'create'])->name('app.support.create');
+    Route::get('/app/support', [App\Http\Controllers\App\Support\SupportTicketController::class, 'index'])->name('app.support.index');
+    Route::get('/app/support/create', [App\Http\Controllers\App\Support\SupportTicketController::class, 'create'])->name('app.support.create');
     Route::post('/app/support', [App\Http\Controllers\App\Support\SupportTicketController::class, 'store'])->name('app.support.store');
-    
+    Route::get('/app/support/{ticket}', [App\Http\Controllers\App\Support\SupportTicketController::class, 'show'])->name('app.support.show');
+    Route::post('/app/support/{ticket}/reply', [App\Http\Controllers\App\Support\SupportTicketController::class, 'storeReply'])->name('app.support.reply');
+
     // Protected App Routes (Enforce Subscription)
-    Route::middleware([\App\Http\Middleware\EnsureOrgActiveAccess::class, 'org.access'])->group(function () {
-        Route::get('/app/dashboard', function () {
-            return Inertia::render('App/Dashboard');
-        })->name('app.dashboard');
+    Route::middleware([\App\Http\Middleware\EnsureOrgHasAccess::class])->group(function () {
+        Route::get('/app/dashboard', App\Http\Controllers\App\DashboardController::class)->name('app.dashboard');
 
         Route::get('/dashboard', function () {
             return redirect()->route('app.dashboard');
         })->name('dashboard');
+
+        // Notifications API
+        Route::get('/app/notifications', [App\Http\Controllers\App\NotificationsController::class, 'index'])->name('notifications.index');
+        Route::post('/app/notifications/{notification}/read', [App\Http\Controllers\App\NotificationsController::class, 'markRead'])->name('notifications.read');
+        Route::post('/app/notifications/mark-all-read', [App\Http\Controllers\App\NotificationsController::class, 'markAllRead'])->name('notifications.markAllRead');
 
         Route::get('/app/organization/members', [OrganizationMembersController::class, 'index'])->name('org.members');
         Route::patch('/app/organization/members/{member}', [OrganizationMembersController::class, 'update'])->name('org.members.update');
         Route::post('/app/organization/invites', [OrganizationMembersController::class, 'invite'])->name('org.invites.create');
         Route::delete('/app/organization/invites/{invite}', [OrganizationMembersController::class, 'revoke'])->name('org.invites.revoke');
         Route::post('/app/organization/invites/{invite}/resend', [OrganizationMembersController::class, 'resend'])
-        ->name('org.invites.resend');
+            ->name('org.invites.resend');
         Route::post('/app/invites/{token}/accept', [InviteAcceptanceController::class, 'acceptWhileLoggedIn'])
             ->name('invites.accept.auth');
 
@@ -111,26 +130,93 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/app/projects/{project}/reports/{report}/download', [App\Http\Controllers\App\ProjectReportsController::class, 'download'])->name('projects.reports.download');
         Route::delete('/app/projects/{project}/reports/{report}', [App\Http\Controllers\App\ProjectReportsController::class, 'destroy'])->name('projects.reports.destroy');
 
-        Route::post('/app/projects/{project}/attachments', [App\Http\Controllers\App\ProjectAttachmentsController::class, 'store'])->name('projects.attachments.store');
+        // PDF Exports (rate limited - heavy operations)
+        Route::middleware('throttle:heavy')->group(function () {
+            Route::get('/app/projects/{project}/reports/{report}/pdf', [App\Http\Controllers\App\ReportPdfController::class, 'download'])->name('projects.reports.pdf');
+            Route::get('/app/projects/{project}/summary/pdf', [App\Http\Controllers\App\ReportPdfController::class, 'projectSummary'])->name('projects.summary.pdf');
+        });
+
+        // Attachments (rate limited - uploads)
+        Route::middleware('throttle:uploads')->group(function () {
+            Route::post('/app/projects/{project}/attachments', [App\Http\Controllers\App\ProjectAttachmentsController::class, 'store'])->name('projects.attachments.store');
+        });
         Route::delete('/app/projects/{project}/attachments/{attachment}', [App\Http\Controllers\App\ProjectAttachmentsController::class, 'destroy'])->name('projects.attachments.destroy');
 
         Route::get('/app/projects/{project}/export/tasks', [App\Http\Controllers\App\ProjectExportsController::class, 'tasks'])->name('projects.export.tasks');
         Route::get('/app/projects/{project}/export/issues', [App\Http\Controllers\App\ProjectExportsController::class, 'issues'])->name('projects.export.issues');
         Route::get('/app/projects/{project}/export/costs', [App\Http\Controllers\App\ProjectExportsController::class, 'costs'])->name('projects.export.costs');
         Route::get('/app/projects/{project}/export/logs', [App\Http\Controllers\App\ProjectExportsController::class, 'logs'])->name('projects.export.logs');
+
+        // CRM Module
+        Route::get('app/crm', [\App\Http\Controllers\CRM\DashboardController::class, 'index'])
+            ->name('crm.dashboard');
+
+        Route::resource('app/crm/properties', \App\Http\Controllers\CRM\PropertyController::class)
+            ->names('crm.properties')
+            ->except(['index', 'show']);
+
+        Route::get('app/crm/properties/{property}/units/create', [\App\Http\Controllers\CRM\PropertyUnitController::class, 'create'])
+            ->name('crm.properties.units.create');
+        Route::post('app/crm/properties/{property}/units', [\App\Http\Controllers\CRM\PropertyUnitController::class, 'store'])
+            ->name('crm.properties.units.store');
+        Route::delete('app/crm/properties/{property}/units/{unit}', [\App\Http\Controllers\CRM\PropertyUnitController::class, 'destroy'])
+            ->name('crm.properties.units.destroy');
+
+        Route::resource('app/crm/leads', \App\Http\Controllers\CRM\LeadController::class)
+            ->names('crm.leads')
+            ->except(['index', 'show']);
+
+        Route::resource('app/crm/deals', \App\Http\Controllers\CRM\DealController::class)
+            ->names('crm.deals')
+            ->except(['index', 'show']);
+    });
+
+    // Finance Routes
+    Route::middleware(['auth', 'verified', \App\Http\Middleware\EnsureOrgActiveAccess::class, 'org.access'])->prefix('app/finance')->name('finance.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Finance\DashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('invoices/{invoice}/pdf', [\App\Http\Controllers\Finance\InvoiceController::class, 'pdf'])->name('invoices.pdf');
+        Route::post('invoices/{invoice}/email', [\App\Http\Controllers\Finance\InvoiceController::class, 'email'])->name('invoices.email');
+        Route::resource('invoices', \App\Http\Controllers\Finance\InvoiceController::class)->except(['index', 'edit', 'update', 'destroy']);
+        Route::resource('expenses', \App\Http\Controllers\Finance\ExpenseController::class)->except(['index', 'show', 'edit']);
+        Route::resource('budgets', \App\Http\Controllers\Finance\BudgetController::class)->only(['store', 'destroy']);
+    });
+
+    // HR Routes
+    Route::middleware(['auth', 'verified', \App\Http\Middleware\EnsureOrgActiveAccess::class, 'org.access'])->prefix('app/hr')->name('hr.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\HR\DashboardController::class, 'index'])->name('dashboard');
+
+        Route::resource('employees', \App\Http\Controllers\HR\EmployeeController::class)->except(['index', 'show', 'destroy']);
+        Route::resource('departments', \App\Http\Controllers\HR\DepartmentController::class)->except(['create', 'edit', 'show', 'index']);
+        Route::resource('payroll', \App\Http\Controllers\HR\PayrollController::class)->only(['create', 'store', 'show']);
+        Route::resource('leaves', \App\Http\Controllers\HR\LeaveController::class)->only(['store', 'update', 'destroy']);
     });
 });
 
-// Public share link (no auth)
 // Public share link (no auth)
 Route::get('/share/report/{token}', [App\Http\Controllers\App\ProjectReportsController::class, 'share'])->name('reports.share');
 Route::post('/share/report/{token}/unlock', [App\Http\Controllers\App\ProjectReportsController::class, 'shareUnlock'])->name('reports.share.unlock');
 Route::get('/share/report/{token}/download', [App\Http\Controllers\App\ProjectReportsController::class, 'shareDownload'])->name('reports.share.download');
 
-// Owner / Super Admin
-require __DIR__.'/owner.php';
+Route::get('/portal/invoices/{invoice}', [\App\Http\Controllers\Public\InvoiceController::class, 'show'])
+    ->name('public.invoice.show')
+    ->middleware('signed');
 
-Route::post('/webhooks/paystack', [App\Http\Controllers\Webhooks\PaystackWebhookController::class, 'handle'])
+Route::post('/portal/invoices/{invoice}/pay', [\App\Http\Controllers\Public\PaymentController::class, 'pay'])
+    ->name('public.invoice.pay')
+    ->middleware('signed');
+
+Route::get('/portal/invoices/{invoice}/payment/callback', [\App\Http\Controllers\Public\PaymentController::class, 'callback'])
+    ->name('public.invoice.payment.callback');
+
+Route::get('/blog', [App\Http\Controllers\BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [App\Http\Controllers\BlogController::class, 'show'])->name('blog.show');
+
+
+// Owner / Super Admin
+require __DIR__ . '/owner.php';
+
+Route::middleware('throttle:webhooks')->post('/webhooks/paystack', [App\Http\Controllers\Webhooks\PaystackWebhookController::class, 'handle'])
     ->name('webhooks.paystack');
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

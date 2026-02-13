@@ -112,6 +112,8 @@ class InviteAcceptanceController extends Controller
         event(new Registered($user));
         Auth::login($user);
 
+        \App\Http\Controllers\App\DashboardController::clearCache($org->id);
+
         return redirect()->route('app.dashboard')
             ->with('success', "Welcome to {$org->name}.");
     }
@@ -169,6 +171,7 @@ class InviteAcceptanceController extends Controller
 
         $user->current_organization_id = $org->id;
         $user->save();
-    }
 
+        \App\Http\Controllers\App\DashboardController::clearCache($org->id);
+    }
 }

@@ -9,6 +9,23 @@ use Inertia\Inertia;
 
 class SupportTicketController extends Controller
 {
+    public function index(Request $request)
+    {
+        $org = \App\Support\CurrentOrg::forUser($request->user());
+        abort_unless($org, 404);
+
+        $tickets = SupportTicket::query()
+            ->where('organization_id', $org->id)
+            ->with(['creator:id,name'])
+            ->orderByDesc('updated_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('App/Support/Index', [
+            'tickets' => $tickets,
+        ]);
+    }
+
     public function create(Request $request)
     {
         return Inertia::render('App/Support/Create', [
@@ -27,12 +44,12 @@ class SupportTicketController extends Controller
         ]);
 
         $user = $request->user();
-        $org = \App\Support\CurrentOrg::forUser($user); // Fixed resolution
+        $org = \App\Support\CurrentOrg::forUser($user);
         if (!$org) {
             return back()->with('error', 'No organization selected.');
         }
 
-        SupportTicket::create([
+        $ticket = SupportTicket::create([
             'organization_id' => $org->id,
             'created_by_user_id' => $user?->id,
             'subject' => $data['subject'],
@@ -42,9 +59,56 @@ class SupportTicketController extends Controller
             'status' => 'open',
         ]);
 
-        // Optional: notify support mailbox via SMTP
-        // We’ll add this in O5 Support+ later if you want.
+        return redirect()->route('app.support.show', $ticket->id)->with('success', 'Ticket submitted.');
+    }
 
-        return redirect('/app/support')->with('success', 'Ticket submitted. We’ll get back to you soon.');
+    public function show(Request $request, SupportTicket $ticket)
+    {
+        $org = \App\Support\CurrentOrg::forUser($request->user());
+        abort_unless($org && $ticket->organization_id === $org->id, 403);
+
+        $ticket->load(['creator:id,name']);
+
+        // Get public conversation messages only (filter out internal admin notes)
+        $notes = $ticket->notes()
+            ->where('is_public', true)
+            ->with(['user:id,name', 'admin:id,name'])
+            ->orderBy('created_at')
+            ->get()
+            ->map(fn($n) => [
+                'id' => $n->id,
+                'note' => $n->note,
+                'is_admin' => $n->admin_id !== null,
+                'user_id' => $n->user_id,
+                'user' => $n->user ? ['id' => $n->user->id, 'name' => $n->user->name] : null,
+                'admin' => $n->admin ? ['name' => $n->admin->name] : null,
+                'created_at' => $n->created_at->toDateTimeString(),
+            ]);
+
+        return Inertia::render('App/Support/Show', [
+            'ticket' => $ticket,
+            'notes' => $notes,
+        ]);
+    }
+
+    public function storeReply(Request $request, SupportTicket $ticket)
+    {
+        $org = \App\Support\CurrentOrg::forUser($request->user());
+        abort_unless($org && $ticket->organization_id === $org->id, 403);
+
+        $data = $request->validate([
+            'message' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $ticket->notes()->create([
+            'user_id' => $request->user()->id,
+            'admin_id' => null,
+            'note' => $data['message'],
+            'is_public' => true,
+        ]);
+
+        $ticket->touch(); // Update updated_at for sorting
+
+        return back()->with('success', 'Reply posted.');
     }
 }

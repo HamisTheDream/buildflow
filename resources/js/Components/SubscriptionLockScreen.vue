@@ -26,7 +26,7 @@ defineProps<{
     </div>
     
     <div class="mt-6 text-xs text-gray-500">
-      Need help? <a href="mailto:support@buildflow.com" class="text-indigo-600 hover:underline">Contact Support</a>
+      Need help? <a href="mailto:hello@buildflow.app" class="text-indigo-600 hover:underline">Contact Support</a>
     </div>
   </div>
 </template>

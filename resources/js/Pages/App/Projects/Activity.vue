@@ -2,9 +2,8 @@
 import { Head, Link, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 
-import AppLayout from '@/Layouts/AppLayout.vue'
+import ProjectLayout from '@/Layouts/ProjectLayout.vue'
 import SectionCard from '@/Components/SectionCard.vue'
-import SectionTitle from '@/Components/SectionTitle.vue'
 import StatCard from '@/Components/StatCard.vue'
 import EmptyState from '@/Components/EmptyState.vue'
 import Badge from '@/Components/Badge.vue'
@@ -52,7 +51,7 @@ function displayTitle(r: any) {
 </script>
 
 <template>
-  <AppLayout>
+  <ProjectLayout :project="project" active="activity">
     <Head :title="project?.name ? `Activity — ${project.name}` : 'Activity'" />
 
     <div class="space-y-6">
@@ -74,9 +73,9 @@ function displayTitle(r: any) {
       </div>
 
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatCard label="Total events" :value="formatNumber(stats?.total ?? rows.length)" />
-        <StatCard label="Today" :value="formatNumber(stats?.today ?? 0)" />
-        <StatCard label="Last 7 days" :value="formatNumber(stats?.week ?? 0)" />
+        <StatCard title="Total events" :value="formatNumber(stats?.total ?? rows.length)" />
+        <StatCard title="Today" :value="formatNumber(stats?.today ?? 0)" />
+        <StatCard title="Last 7 days" :value="formatNumber(stats?.week ?? 0)" />
       </div>
 
       <SectionCard>
@@ -133,5 +132,5 @@ function displayTitle(r: any) {
         </div>
       </SectionCard>
     </div>
-  </AppLayout>
+  </ProjectLayout>
 </template>

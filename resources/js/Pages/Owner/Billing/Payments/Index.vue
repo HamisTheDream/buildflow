@@ -35,10 +35,10 @@ function tone(s:string) {
     <SectionCard title="Payments" subtitle="Search and reconcile payments.">
       <div class="grid grid-cols-1 gap-3 md:grid-cols-12">
         <div class="md:col-span-7">
-          <input v-model="form.q" class="w-full rounded-lg border p-2 text-sm" placeholder="Search by reference..." />
+          <input v-model="form.q" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="Search by reference..." />
         </div>
         <div class="md:col-span-4">
-          <select v-model="form.status" class="w-full rounded-lg border p-2 text-sm">
+          <select v-model="form.status" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500">
             <option value="">All statuses</option>
             <option value="success">Success</option>
             <option value="pending">Pending</option>

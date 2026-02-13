@@ -81,6 +81,7 @@ function revoke(inviteId: number) {
               <div>
                 <label class="text-sm text-gray-700">Role</label>
                 <select v-model="form.role" class="mt-1 w-full rounded-lg border p-2">
+                  <option value="viewer">Viewer (read-only)</option>
                   <option value="member">Member</option>
                   <option value="admin">Admin</option>
                 </select>
