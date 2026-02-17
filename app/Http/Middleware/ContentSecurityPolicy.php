@@ -45,17 +45,19 @@ class ContentSecurityPolicy
         $isDev = !app()->isProduction();
         $viteDevSources = $isDev ? ' http://localhost:5173 http://127.0.0.1:5173' : '';
         $viteWsSources = $isDev ? ' http://localhost:5173 ws://localhost:5173 http://127.0.0.1:5173 ws://127.0.0.1:5173' : '';
-        $unsafeEval = $isDev ? " 'unsafe-eval'" : '';
+
+        // Allow unsafe-eval in production for now to prevent WSOD with some Vue/Vite configs
+        $unsafeEval = " 'unsafe-eval'";
 
         $directives = [
             // Default: only allow same origin
             "default-src 'self'",
 
-            // Scripts: self, inline (needed for Vite/Inertia), eval only in dev
-            "script-src 'self' 'unsafe-inline'{$unsafeEval}{$viteDevSources}",
+            // Scripts: self, inline (needed for Vite/Inertia), eval
+            "script-src 'self' 'unsafe-inline'{$unsafeEval} https:{$viteDevSources}",
 
             // Styles: self and inline (needed for Tailwind and dynamic styles)
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com{$viteDevSources}",
+            "style-src 'self' 'unsafe-inline' https:{$viteDevSources}",
 
             // Images: self, data URIs (for inline images), and blob (for file previews)
             "img-src 'self' data: blob: https:",
