@@ -11,13 +11,14 @@ WORKDIR /var/www/html
 
 
 # Fix permissions
-RUN chown -R webuser:webgroup /var/www/html
+# Fix permissions
+RUN chown -R www-data:www-data /var/www/html
 
-USER webuser
+USER www-data
 
 # Copy app files
-COPY --chown=webuser:webgroup . /var/www/html
-COPY --from=node_builder --chown=webuser:webgroup /app/public/build /var/www/html/public/build
+COPY --chown=www-data:www-data . /var/www/html
+COPY --from=node_builder --chown=www-data:www-data /app/public/build /var/www/html/public/build
 
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader
