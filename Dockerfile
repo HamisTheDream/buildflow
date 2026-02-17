@@ -1,7 +1,7 @@
 FROM node:20-slim AS node_builder
 WORKDIR /app
 COPY . .
-RUN npm ci && npm run build
+RUN echo "Cache Bust 1" && npm ci && npm run build
 
 FROM serversideup/php:8.2-fpm-nginx
 WORKDIR /var/www/html
