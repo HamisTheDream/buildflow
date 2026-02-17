@@ -18,7 +18,9 @@
     @inertiaHead
 
     @php
-    $site_icon = \App\Models\Setting::where('key', 'site_icon')->value('value');
+    $site_icon = cache()->remember('site_icon_favicon', 3600, function () {
+    return \App\Models\Setting::where('key', 'site_icon')->value('value');
+    });
     @endphp
     @if($site_icon)
     <link rel="icon" href="{{ asset('storage/' . $site_icon) }}">

@@ -19,7 +19,7 @@ class UsageService
         $bytesAttachments = (int) Attachment::where('organization_id', $org->id)->sum('size');
         // ProjectMedia belongs to Project, not Org directly
         $bytesMedia = (int) \App\Models\ProjectMedia::whereIn('project_id', $org->projects()->select('id'))->sum('size');
-        
+
         $totalBytes = $bytesAttachments + $bytesMedia;
         $storageMb = (int) round($totalBytes / 1024 / 1024);
 
@@ -34,6 +34,19 @@ class UsageService
     {
         $plan = $org->effectivePlan();
         $usage = $this->getUsage($org);
+
+        if (!$plan) {
+            return [
+                'usage' => $usage,
+                'limits' => ['max_projects' => 1, 'max_members' => 3, 'max_storage_mb' => 200],
+                'can' => [
+                    'create_project' => $usage['projects'] < 1,
+                    'invite_member' => $usage['members'] < 3,
+                    'upload' => $usage['storage_mb'] < 200,
+                    'password_protect_reports' => false,
+                ],
+            ];
+        }
 
         $active = $org->isActiveAccess();
 

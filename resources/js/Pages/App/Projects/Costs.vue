@@ -12,7 +12,7 @@ import TextInput from '@/Components/TextInput.vue'
 import TextArea from '@/Components/TextArea.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
 import SecondaryButton from '@/Components/SecondaryButton.vue'
-import { formatMoneyKobo, formatEnum, formatDate } from '@/utils/format'
+import { formatCurrency, formatEnum, formatDate } from '@/utils/format'
 
 const props = defineProps<{
     project: any;
@@ -145,9 +145,9 @@ function statusTone(status: string) {
                 <div class="absolute top-0 right-0 p-32 bg-brand-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                 <div class="relative z-10">
                     <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Total Spend (Approved)</h3>
-                    <div class="mt-2 flex items-baseline gap-2">
-                        <span class="text-4xl font-bold tracking-tight">{{ formatMoneyKobo(metrics.total_spend) }}</span>
-                        <span class="text-lg text-slate-500 font-medium">/ {{ formatMoneyKobo(metrics.total_budget) }}</span>
+                    <div class="mt-2 flex items-baseline gap-2 flex-wrap">
+                        <span class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight break-all">{{ formatCurrency(metrics.total_spend) }}</span>
+                        <span class="text-base lg:text-lg text-slate-500 font-medium break-all">/ {{ formatCurrency(metrics.total_budget) }}</span>
                     </div>
 
                     <div class="mt-6">
@@ -191,7 +191,7 @@ function statusTone(status: string) {
                             <span class="text-2xl font-bold" :class="metrics.pending_count > 0 ? 'text-amber-900' : 'text-gray-400'">{{ metrics.pending_count }}</span>
                             <span class="text-xs ml-1" :class="metrics.pending_count > 0 ? 'text-amber-700' : 'text-gray-400'">Pending</span>
                         </div>
-                        <span class="text-sm font-medium" :class="metrics.pending_count > 0 ? 'text-amber-800' : 'text-gray-400'">{{ formatMoneyKobo(metrics.pending_amount) }}</span>
+                        <span class="text-sm font-medium truncate" :class="metrics.pending_count > 0 ? 'text-amber-800' : 'text-gray-400'">{{ formatCurrency(metrics.pending_amount) }}</span>
                     </div>
                 </div>
 
@@ -209,7 +209,7 @@ function statusTone(status: string) {
                             <span class="text-2xl font-bold" :class="metrics.unpaid_count > 0 ? 'text-red-900' : 'text-gray-400'">{{ metrics.unpaid_count }}</span>
                             <span class="text-xs ml-1" :class="metrics.unpaid_count > 0 ? 'text-red-700' : 'text-gray-400'">Unpaid</span>
                         </div>
-                        <span class="text-sm font-medium" :class="metrics.unpaid_count > 0 ? 'text-red-800' : 'text-gray-400'">{{ formatMoneyKobo(metrics.unpaid_amount) }}</span>
+                        <span class="text-sm font-medium truncate" :class="metrics.unpaid_count > 0 ? 'text-red-800' : 'text-gray-400'">{{ formatCurrency(metrics.unpaid_amount) }}</span>
                     </div>
                 </div>
             </div>
@@ -290,7 +290,7 @@ function statusTone(status: string) {
                              <Badge :text="formatEnum(cost.status)" :tone="statusTone(cost.status)" size="sm" dot />
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                            {{ formatMoneyKobo(cost.amount) }}
+                            {{ formatCurrency(cost.amount) }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ formatDate(cost.cost_date) }}

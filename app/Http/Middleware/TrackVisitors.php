@@ -16,13 +16,25 @@ class TrackVisitors
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Skip for console, API, or static assets if needed, though 'web' group handles most
+        // Skip for console, API, or static assets
         if ($request->is('storage/*', 'build/*', 'vendor/*', 'api/*')) {
             return $next($request);
         }
 
-        // Only track GET requests primarily to avoid noise
+        // Only track GET requests to avoid noise
         if (!$request->isMethod('GET')) {
+            return $next($request);
+        }
+
+        // Skip Inertia partial/prefetch requests — these are AJAX navigations
+        // that already tracked the initial page load
+        if ($request->header('X-Inertia') || $request->header('X-Inertia-Partial-Data')) {
+            return $next($request);
+        }
+
+        // Rate-limit: only log once per URL per session every 5 minutes
+        $cacheKey = 'visitor_tracked:' . md5($request->ip() . '|' . $request->fullUrl());
+        if (cache()->has($cacheKey)) {
             return $next($request);
         }
 
@@ -35,9 +47,11 @@ class TrackVisitors
                 'referer' => $request->header('referer'),
                 'visit_time' => now(),
             ]);
+
+            // Mark as tracked for 5 minutes
+            cache()->put($cacheKey, true, 300);
         } catch (\Exception $e) {
             // Silently fail to not disrupt user experience
-            // Log::error('Visitor tracking failed: ' . $e->getMessage());
         }
 
         return $next($request);

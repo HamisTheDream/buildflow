@@ -2,10 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Announcement;
 use Illuminate\Http\Request;
-use Inertia\Middleware;
+use Inertia\Inertia;
+use Inertia\Middleware as InertiaMiddleware;
 
-class HandleInertiaRequests extends Middleware
+class HandleInertiaRequests extends InertiaMiddleware
 {
     /**
      * The root template that is loaded on the first page visit.
@@ -40,13 +42,11 @@ class HandleInertiaRequests extends Middleware
         // Compute org role once to avoid duplicate queries
         $orgRole = ($isUser && $user && $org) ? $user->orgRole($org->id) : null;
 
-        // Only compute for logged-in users
-        $entitlements = ($isUser && $user)
-            ? app(\App\Services\EntitlementsService::class)->forOrg($org)
+        // Only resolve owner admin on owner routes — skip for user routes
+        $isOwnerRoute = str_starts_with($request->path(), 'owner');
+        $ownerAdmin = $isOwnerRoute
+            ? \Illuminate\Support\Facades\Auth::guard('owner')->user()
             : null;
-
-        // Resolve owner admin once instead of 6+ Auth::guard() calls
-        $ownerAdmin = \Illuminate\Support\Facades\Auth::guard('owner')->user();
 
         // Cache site settings to avoid DB query on every request
         $siteSettings = cache()->remember('site_settings', 3600, function () {
@@ -71,7 +71,7 @@ class HandleInertiaRequests extends Middleware
                     'name' => $org->name,
                     'type' => $org->type,
                     'currency' => $org->currency,
-                    'plan' => $org->effectivePlan()->key,
+                    'plan' => $org->effectivePlan()?->key,
                     'subscription' => [
                         'status' => $org->subscription_status,
                         'paid_until' => $org->paid_until?->toDateTimeString(),
@@ -94,7 +94,38 @@ class HandleInertiaRequests extends Middleware
                     'is_super' => (bool) $ownerAdmin->is_super,
                 ] : null,
             ],
-            'entitlements' => $entitlements,
+            // Lazy-load entitlements — only computed when the component needs them
+            'entitlements' => Inertia::lazy(function () use ($isUser, $user, $org) {
+                return ($isUser && $user)
+                    ? app(\App\Services\EntitlementsService::class)->forOrg($org)
+                    : null;
+            }),
+            // Active announcements for this user's org/plan
+            'announcements' => function () use ($isUser, $org) {
+                if (!$isUser || !$org) return [];
+
+                $cacheKey = 'announcements:org:' . $org->id;
+                return cache()->remember($cacheKey, 300, function () use ($org) {
+                    $planId = $org->effectivePlan()?->id;
+
+                    return Announcement::where('is_active', true)
+                        ->where(function ($q) {
+                            $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+                        })
+                        ->where(function ($q) {
+                            $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
+                        })
+                        ->where(function ($q) use ($org, $planId) {
+                            $q->where('is_global', true)
+                                ->orWhere('organization_id', $org->id)
+                                ->when($planId, fn($q2) => $q2->orWhere('plan_id', $planId));
+                        })
+                        ->orderByDesc('id')
+                        ->limit(5)
+                        ->get(['id', 'title', 'body', 'tone', 'cta_text', 'cta_url'])
+                        ->toArray();
+                });
+            },
             'flash' => [
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),

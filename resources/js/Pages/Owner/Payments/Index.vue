@@ -50,7 +50,7 @@ function statusColor(status: string) {
             />
         </div>
 
-        <div class="mt-8 overflow-hidden rounded-lg bg-gray-800 shadow ring-1 ring-white/5">
+        <div class="mt-8 overflow-x-auto rounded-lg bg-gray-800 shadow ring-1 ring-white/5">
           <table class="min-w-full divide-y divide-gray-700">
             <thead class="bg-gray-700/50">
               <tr>

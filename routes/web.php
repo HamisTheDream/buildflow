@@ -49,7 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/app/settings/security/password', [ProfileSettingsController::class, 'updatePassword'])->name('settings.password.update');
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     // Billing & Profile (Accessible even if expired)
     Route::get('/app/billing', [App\Http\Controllers\App\OrgBillingController::class, 'index'])->name('billing');
     Route::post('/app/billing/upgrade', [App\Http\Controllers\App\PaystackBillingController::class, 'upgrade'])->name('billing.upgrade');
@@ -172,7 +172,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Finance Routes
-    Route::middleware(['auth', 'verified', \App\Http\Middleware\EnsureOrgActiveAccess::class, 'org.access'])->prefix('app/finance')->name('finance.')->group(function () {
+    Route::middleware(['auth', \App\Http\Middleware\EnsureOrgActiveAccess::class, 'org.access'])->prefix('app/finance')->name('finance.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Finance\DashboardController::class, 'index'])->name('dashboard');
 
         Route::get('invoices/{invoice}/pdf', [\App\Http\Controllers\Finance\InvoiceController::class, 'pdf'])->name('invoices.pdf');
@@ -183,7 +183,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // HR Routes
-    Route::middleware(['auth', 'verified', \App\Http\Middleware\EnsureOrgActiveAccess::class, 'org.access'])->prefix('app/hr')->name('hr.')->group(function () {
+    Route::middleware(['auth', \App\Http\Middleware\EnsureOrgActiveAccess::class, 'org.access'])->prefix('app/hr')->name('hr.')->group(function () {
         Route::get('/', [\App\Http\Controllers\HR\DashboardController::class, 'index'])->name('dashboard');
 
         Route::resource('employees', \App\Http\Controllers\HR\EmployeeController::class)->except(['index', 'show', 'destroy']);

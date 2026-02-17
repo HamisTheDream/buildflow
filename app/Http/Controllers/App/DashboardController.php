@@ -78,28 +78,33 @@ class DashboardController extends Controller
     {
         $orgId = $org->id;
 
-        $projectsCount = Project::where('organization_id', $orgId)->count();
+        // Pre-fetch project IDs once to avoid repeated whereHas subqueries
+        $projectIds = Project::where('organization_id', $orgId)->pluck('id');
+        $projectsCount = $projectIds->count();
 
         $openIssuesCount = ProjectIssue::query()
-            ->whereHas('project', fn($q) => $q->where('organization_id', $orgId))
+            ->whereIn('project_id', $projectIds)
             ->whereIn('status', ['open', 'in_progress'])
             ->count();
 
         $pendingCostsSum = ProjectCost::query()
-            ->whereHas('project', fn($q) => $q->where('organization_id', $orgId))
+            ->whereIn('project_id', $projectIds)
             ->sum('amount');
 
         $recentActivityCount = ProjectLog::query()
-            ->whereHas('project', fn($q) => $q->where('organization_id', $orgId))
+            ->whereIn('project_id', $projectIds)
             ->where('created_at', '>=', Carbon::now()->subDays(7))
             ->count();
 
-        // Overdue tasks
         $overdueTasksCount = ProjectTask::query()
-            ->whereHas('project', fn($q) => $q->where('organization_id', $orgId))
+            ->whereIn('project_id', $projectIds)
             ->where('status', '!=', 'done')
             ->whereNotNull('due_date')
             ->where('due_date', '<', Carbon::today())
+            ->count();
+
+        $tasksCount = ProjectTask::query()
+            ->whereIn('project_id', $projectIds)
             ->count();
 
         $leadsCount = Lead::where('organization_id', $orgId)->count();
@@ -128,7 +133,7 @@ class DashboardController extends Controller
             'pending_costs_sum' => $pendingCostsSum,
             'recent_activity_count' => $recentActivityCount,
             'overdue_tasks_count' => $overdueTasksCount,
-            'tasks_count' => ProjectTask::query()->whereHas('project', fn($q) => $q->where('organization_id', $orgId))->count(),
+            'tasks_count' => $tasksCount,
             'members_count' => $org->users()->count(),
             'leads_count' => $leadsCount,
             'deals_count' => $dealsCount,
@@ -165,22 +170,29 @@ class DashboardController extends Controller
             'actual' => $topProjects->pluck('total_cost')->map(fn($v) => round(($v ?? 0) / 100))->toArray(),
         ];
 
-        // 3. Monthly activity trend (last 6 months)
-        $monthlyActivity = [];
+        // 3. Monthly activity trend (last 6 months) — single query with GROUP BY
+        $sixMonthsAgo = Carbon::now()->subMonths(5)->startOfMonth();
+        $projectIds = Project::where('organization_id', $orgId)->pluck('id');
+
+        $monthlyCounts = ProjectLog::query()
+            ->whereIn('project_id', $projectIds)
+            ->where('created_at', '>=', $sixMonthsAgo)
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count")
+            ->groupBy('month')
+            ->pluck('count', 'month');
+
         $monthLabels = [];
+        $monthlyActivity = [];
         for ($i = 5; $i >= 0; $i--) {
             $date = Carbon::now()->subMonths($i);
+            $key = $date->format('Y-m');
             $monthLabels[] = $date->format('M');
-            $monthlyActivity[] = ProjectLog::query()
-                ->whereHas('project', fn($q) => $q->where('organization_id', $orgId))
-                ->whereYear('created_at', $date->year)
-                ->whereMonth('created_at', $date->month)
-                ->count();
+            $monthlyActivity[] = $monthlyCounts[$key] ?? 0;
         }
 
-        // 4. Issue severity breakdown
+        // 4. Issue severity breakdown (reuse projectIds from above)
         $issueSeverities = ProjectIssue::query()
-            ->whereHas('project', fn($q) => $q->where('organization_id', $orgId))
+            ->whereIn('project_id', $projectIds)
             ->whereIn('status', ['open', 'in_progress', 'blocked'])
             ->selectRaw("severity, COUNT(*) as count")
             ->groupBy('severity')

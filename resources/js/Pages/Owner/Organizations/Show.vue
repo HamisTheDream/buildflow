@@ -6,7 +6,7 @@ import Badge from '@/Components/Badge.vue'
 import ActivityTimeline from '@/Components/Owner/CRM/ActivityTimeline.vue'
 import TaskManager from '@/Components/Owner/CRM/TaskManager.vue'
 import ConfirmationModal from '@/Components/ConfirmationModal.vue'
-import { formatDateTime, formatEnum, formatMoneyKobo } from '@/utils/format'
+import { formatDateTime, formatEnum } from '@/utils/format'
 import { computed } from 'vue'
 
 const page = usePage<any>()

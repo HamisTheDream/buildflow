@@ -33,11 +33,11 @@ const icons: Record<string, string> = {
     ]"
   >
     <div class="flex items-start justify-between gap-4">
-      <div class="min-w-0">
+      <div class="min-w-0 flex-1">
         <div class="text-xs font-medium text-gray-500 uppercase tracking-wide truncate">{{ title }}</div>
         <div 
           :class="[
-            'mt-2 text-2xl font-semibold tracking-tight',
+            'mt-2 text-2xl font-semibold tracking-tight truncate',
             {
               'text-gray-900': !variant || variant === 'default',
               'text-amber-700': variant === 'warning',

@@ -16,9 +16,11 @@ const form = useForm({
     assigned_to: '',
 });
 
+const submit = () => {
     form.post(route('crm.leads.store'), {
         onSuccess: () => form.reset(),
     });
+};
 </script>
 
 <template>

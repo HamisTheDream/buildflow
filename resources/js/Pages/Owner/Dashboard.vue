@@ -111,27 +111,27 @@ const visitorColors = [
         <div class="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-6">
           <div class="rounded-xl bg-gradient-to-br from-brand-50 to-orange-50 p-4 ring-1 ring-brand-100">
             <div class="text-xs font-medium text-brand-600 uppercase tracking-wide">MRR</div>
-            <div class="mt-1 text-xl font-semibold text-gray-900">{{ formatMoneyKobo(metrics.mrr_kobo, 'NGN') }}</div>
+            <div class="mt-1 text-lg font-semibold text-gray-900 truncate">{{ formatMoneyKobo(metrics.mrr_kobo, 'NGN') }}</div>
           </div>
           <div class="rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 p-4 ring-1 ring-emerald-100">
             <div class="text-xs font-medium text-emerald-600 uppercase tracking-wide">This Month</div>
-            <div class="mt-1 text-xl font-semibold text-gray-900">{{ formatMoneyKobo(metrics.revenue_month_kobo, 'NGN') }}</div>
+            <div class="mt-1 text-lg font-semibold text-gray-900 truncate">{{ formatMoneyKobo(metrics.revenue_month_kobo, 'NGN') }}</div>
           </div>
           <div class="rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 p-4 ring-1 ring-blue-100">
             <div class="text-xs font-medium text-blue-600 uppercase tracking-wide">Today</div>
-            <div class="mt-1 text-xl font-semibold text-gray-900">{{ formatMoneyKobo(metrics.revenue_today_kobo, 'NGN') }}</div>
+            <div class="mt-1 text-lg font-semibold text-gray-900 truncate">{{ formatMoneyKobo(metrics.revenue_today_kobo, 'NGN') }}</div>
           </div>
           <div class="rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 p-4 ring-1 ring-purple-100">
             <div class="text-xs font-medium text-purple-600 uppercase tracking-wide">Payments Today</div>
-            <div class="mt-1 text-xl font-semibold text-gray-900">{{ metrics.payments_today }}</div>
+            <div class="mt-1 text-lg font-semibold text-gray-900 truncate">{{ metrics.payments_today }}</div>
           </div>
           <div class="rounded-xl bg-gradient-to-br from-red-50 to-orange-50 p-4 ring-1 ring-red-100">
             <div class="text-xs font-medium text-red-600 uppercase tracking-wide">Churn Rate</div>
-            <div class="mt-1 text-xl font-semibold text-gray-900">{{ metrics.churn_rate.toFixed(1) }}%</div>
+            <div class="mt-1 text-lg font-semibold text-gray-900 truncate">{{ metrics.churn_rate.toFixed(1) }}%</div>
           </div>
           <div class="rounded-xl bg-gradient-to-br from-indigo-50 to-violet-50 p-4 ring-1 ring-indigo-100">
             <div class="text-xs font-medium text-indigo-600 uppercase tracking-wide">LTV (Est.)</div>
-            <div class="mt-1 text-xl font-semibold text-gray-900">{{ formatMoneyKobo(metrics.ltv_kobo, 'NGN') }}</div>
+            <div class="mt-1 text-lg font-semibold text-gray-900 truncate">{{ formatMoneyKobo(metrics.ltv_kobo, 'NGN') }}</div>
           </div>
         </div>
 
@@ -276,7 +276,6 @@ const visitorColors = [
             <div class="text-3xl font-bold text-gray-500">{{ metrics.orgs_total - metrics.orgs_active - metrics.orgs_trial - metrics.orgs_expired }}</div>
             <div class="mt-1 text-sm font-medium text-gray-600">Other</div>
           </div>
-        </div>
         </div>
       </div>
 

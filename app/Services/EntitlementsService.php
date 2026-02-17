@@ -27,6 +27,26 @@ class EntitlementsService
         }
 
         $plan = $org->effectivePlan(); // you already added this
+
+        if (!$plan) {
+            return [
+                'plan' => null,
+                'usage' => $this->usage->getUsage($org),
+                'limits' => null,
+                'can' => [
+                    'create_project' => true,
+                    'invite_member' => true,
+                    'upload' => true,
+                    'share_reports' => false,
+                    'password_protect_reports' => false,
+                ],
+                'subscription' => [
+                    'status' => $org->subscription_status,
+                    'trial_ends_at' => $org->trial_ends_at?->toDateTimeString(),
+                ],
+            ];
+        }
+
         $gate = $this->usage->withinLimits($org); // returns usage/limits/can
 
         return [

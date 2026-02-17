@@ -123,9 +123,9 @@ const projectStatusText = computed(() => {
                 </div>
 
                 <div class="mt-6">
-                    <div class="flex items-end gap-1 mb-2">
-                        <span class="text-2xl font-bold text-gray-900">{{ formatCurrency(metrics.total_spend) }}</span>
-                        <span class="text-sm text-gray-500 mb-1">/ {{ formatCurrency(metrics.total_budget) }}</span>
+                    <div class="flex items-end gap-1 mb-2 flex-wrap">
+                        <span class="text-xl sm:text-2xl font-bold text-gray-900 break-all">{{ formatCurrency(metrics.total_spend) }}</span>
+                        <span class="text-xs sm:text-sm text-gray-500 mb-1 break-all">/ {{ formatCurrency(metrics.total_budget) }}</span>
                     </div>
                     
                     <!-- Progress Bar -->

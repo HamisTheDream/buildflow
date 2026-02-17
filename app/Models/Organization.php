@@ -79,10 +79,10 @@ class Organization extends Model
         return $this->belongsTo(\App\Models\Plan::class);
     }
 
-    public function effectivePlan(): \App\Models\Plan
+    public function effectivePlan(): ?\App\Models\Plan
     {
-        // fallback to free
-        return $this->plan ?: \App\Models\Plan::where('key', 'free')->firstOrFail();
+        // fallback to free (use first() instead of firstOrFail() to avoid 404 crash)
+        return $this->plan ?: \App\Models\Plan::where('key', 'free')->first();
     }
 
     public function isTrialActive(): bool

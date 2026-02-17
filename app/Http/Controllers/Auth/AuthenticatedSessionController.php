@@ -37,37 +37,14 @@ class AuthenticatedSessionController extends Controller
         $pendingToken = $request->session()->pull('pending_invite_token');
 
         if ($pendingToken) {
-            $invite = \App\Models\OrganizationInvite::query()
-                ->where('token', $pendingToken)
-                ->with('organization')
-                ->first();
+            $service = app(\App\Services\InviteAcceptanceService::class);
+            $org = $service->acceptPendingInvite($request->user(), $pendingToken);
 
-            if ($invite && !$invite->accepted_at) {
-                $emailMatches = strtolower($invite->email) === strtolower($request->user()->email);
-
-                $notExpired = !$invite->expires_at || now()->lessThanOrEqualTo($invite->expires_at);
-
-                if ($emailMatches && $notExpired) {
-                    // attach membership + mark accepted + set current org
-                    $org = $invite->organization;
-
-                    $org->users()->syncWithoutDetaching([
-                        $request->user()->id => ['role' => $invite->role],
-                    ]);
-
-                    $invite->accepted_at = now();
-                    $invite->accepted_by = $request->user()->id;
-                    $invite->save();
-
-                    $request->user()->current_organization_id = $org->id;
-                    $request->user()->save();
-
-                    return redirect()->route('app.dashboard')
-                        ->with('success', "Invite accepted. Welcome to {$org->name}.");
-                }
+            if ($org) {
+                return redirect()->route('app.dashboard')
+                    ->with('success', "Invite accepted. Welcome to {$org->name}.");
             }
         }
-
 
         return redirect()->intended(route('dashboard', absolute: false));
     }

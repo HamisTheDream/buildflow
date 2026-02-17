@@ -15,9 +15,11 @@ const form = useForm({
     total_units: 0,
 });
 
+const submit = () => {
     form.post(route('crm.properties.store'), {
         onSuccess: () => form.reset(),
     });
+};
 </script>
 
 <template>

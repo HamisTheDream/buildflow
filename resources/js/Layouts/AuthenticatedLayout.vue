@@ -125,6 +125,24 @@ const navItems = computed(() => {
 const user = computed(() => page.props.auth?.user)
 const avatarUrl = computed(() => user.value?.avatar_url)
 const userInitial = computed(() => user.value?.name?.charAt(0)?.toUpperCase() || 'U')
+
+// Announcements
+const dismissedAnnouncements = ref(new Set(JSON.parse(sessionStorage.getItem('dismissed_announcements') || '[]')))
+const announcements = computed(() => {
+    const all = page.props.announcements || []
+    return all.filter(a => !dismissedAnnouncements.value.has(a.id))
+})
+const dismissAnnouncement = (id) => {
+    dismissedAnnouncements.value.add(id)
+    const arr = Array.from(dismissedAnnouncements.value)
+    sessionStorage.setItem('dismissed_announcements', JSON.stringify(arr))
+}
+const toneClasses = {
+    info: 'bg-blue-600 text-white',
+    success: 'bg-emerald-600 text-white',
+    warning: 'bg-amber-500 text-white',
+    danger: 'bg-red-600 text-white',
+}
 </script>
 
 <template>
@@ -294,6 +312,26 @@ const userInitial = computed(() => user.value?.name?.charAt(0)?.toUpperCase() ||
                     <Link href="/app/billing" class="rounded-full bg-white px-4 py-1.5 text-xs font-bold text-brand-600 shadow-sm hover:bg-brand-50 transition">
                         Renew Now &rarr;
                     </Link>
+                </div>
+            </div>
+
+            <!-- Announcement Banners -->
+            <div v-for="a in announcements" :key="a.id" :class="toneClasses[a.tone] || toneClasses.info" class="px-4 py-2.5">
+                <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 sm:px-6 lg:px-8">
+                    <div class="flex-1 min-w-0">
+                        <span class="text-sm font-bold">{{ a.title }}</span>
+                        <span v-if="a.body" class="ml-2 text-sm opacity-90">{{ a.body }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <a v-if="a.cta_url" :href="a.cta_url" class="rounded-full bg-white/20 px-3 py-1 text-xs font-bold hover:bg-white/30 transition">
+                            {{ a.cta_text || 'Learn More' }}
+                        </a>
+                        <button @click="dismissAnnouncement(a.id)" class="rounded-full p-1 hover:bg-white/20 transition" title="Dismiss">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 

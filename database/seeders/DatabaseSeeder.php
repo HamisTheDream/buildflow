@@ -29,32 +29,5 @@ class DatabaseSeeder extends Seeder
                 'is_super' => true,
             ]
         );
-
-        // Owner User
-        $user = User::firstOrCreate(
-            ['email' => 'owner@buildflow.com'],
-            [
-                'name' => 'Owner User',
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ]
-        );
-
-        // Organization
-        $org = Organization::firstOrCreate(
-            ['name' => 'BuildFlow HQ'],
-            [
-                'type' => 'company',
-                'currency' => 'NGN',
-            ]
-        );
-
-        // Link User to Organization
-        if (!$org->users()->where('user_id', $user->id)->exists()) {
-             $org->users()->attach($user->id, ['role' => 'owner']);
-        }
-        
-        // Set current organization
-        $user->forceFill(['current_organization_id' => $org->id])->save();
     }
 }

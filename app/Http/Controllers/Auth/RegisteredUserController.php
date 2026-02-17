@@ -34,10 +34,10 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
-            'account_type' => ['required', Rule::in(['individual','company'])],
+            'account_type' => ['required', Rule::in(['individual', 'company'])],
             'organization_name' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -49,37 +49,40 @@ class RegisteredUserController extends Controller
             ]);
         }
 
-        $user = User::create([
-            'name' => $request->string('name')->toString(),
-            'email' => $request->string('email')->lower()->toString(),
-            'phone' => $request->input('phone'),
-            'password' => Hash::make($request->string('password')->toString()),
-            'is_invited_only' => false,
-        ]);
+        $user = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $accountType) {
+            $user = User::create([
+                'name' => $request->string('name')->toString(),
+                'email' => $request->string('email')->lower()->toString(),
+                'phone' => $request->input('phone'),
+                'password' => Hash::make($request->string('password')->toString()),
+                'is_invited_only' => false,
+            ]);
 
-        // Create org based on account type
-        $orgName = $accountType === 'company'
-            ? $request->string('organization_name')->toString()
-            : $user->name . "'s Workspace";
+            // Create org based on account type
+            $orgName = $accountType === 'company'
+                ? $request->string('organization_name')->toString()
+                : $user->name . "'s Workspace";
 
-        $org = Organization::create([
-            'name' => $orgName,
-            'type' => $accountType,
-            'currency' => 'NGN',
-        ]);
+            $org = Organization::create([
+                'name' => $orgName,
+                'type' => $accountType,
+                'currency' => $request->input('currency', 'NGN'),
+            ]);
 
-        // Attach user as owner
-        $org->users()->syncWithoutDetaching([
-            $user->id => ['role' => 'owner'],
-        ]);
+            // Attach user as owner
+            $org->users()->syncWithoutDetaching([
+                $user->id => ['role' => 'owner'],
+            ]);
 
-        $user->current_organization_id = $org->id;
-        $user->save();
+            $user->current_organization_id = $org->id;
+            $user->save();
+
+            return $user;
+        });
 
         event(new Registered($user));
         Auth::login($user);
 
         return redirect()->route('app.dashboard');
     }
-
 }

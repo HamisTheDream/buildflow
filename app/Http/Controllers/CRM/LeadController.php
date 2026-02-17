@@ -37,7 +37,7 @@ class LeadController extends Controller
             ...$data,
         ]);
 
-        return redirect()->route('crm.leads.index')->with('success', 'Lead created successfully.');
+        return redirect()->route('crm.dashboard', ['tab' => 'leads'])->with('success', 'Lead created successfully.');
     }
 
     public function update(Request $request, Lead $lead)

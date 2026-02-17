@@ -53,7 +53,7 @@ class DealController extends Controller
             ...$data,
         ]);
 
-        return redirect()->route('crm.deals.index')->with('success', 'Deal created successfully.');
+        return redirect()->route('crm.dashboard', ['tab' => 'sales'])->with('success', 'Deal created successfully.');
     }
 
     public function update(Request $request, Deal $deal)

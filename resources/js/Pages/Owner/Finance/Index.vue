@@ -45,19 +45,19 @@ const formatCurrency = (cents: number) => {
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                  <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h3 class="text-sm font-medium text-gray-500">Total Revenue (Won Deals)</h3>
-                    <p class="mt-2 text-3xl font-semibold text-gray-900">{{ formatCurrency(metrics.total_revenue) }}</p>
+                    <p class="mt-2 text-2xl lg:text-3xl font-semibold text-gray-900 truncate">{{ formatCurrency(metrics.total_revenue) }}</p>
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h3 class="text-sm font-medium text-gray-500">Total Expenses</h3>
-                    <p class="mt-2 text-3xl font-semibold text-gray-900">{{ formatCurrency(metrics.total_expenses) }}</p>
+                    <p class="mt-2 text-2xl lg:text-3xl font-semibold text-gray-900 truncate">{{ formatCurrency(metrics.total_expenses) }}</p>
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h3 class="text-sm font-medium text-gray-500">Est. Monthly Burn</h3>
-                    <p class="mt-2 text-3xl font-semibold text-gray-900">{{ formatCurrency(metrics.monthly_burn) }}</p>
+                    <p class="mt-2 text-2xl lg:text-3xl font-semibold text-gray-900 truncate">{{ formatCurrency(metrics.monthly_burn) }}</p>
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h3 class="text-sm font-medium text-gray-500">Net Profit (Approx)</h3>
-                    <p class="mt-2 text-3xl font-semibold" :class="metrics.pnl >= 0 ? 'text-green-600' : 'text-red-600'">
+                    <p class="mt-2 text-2xl lg:text-3xl font-semibold truncate" :class="metrics.pnl >= 0 ? 'text-green-600' : 'text-red-600'">
                         {{ formatCurrency(metrics.pnl) }}
                     </p>
                 </div>

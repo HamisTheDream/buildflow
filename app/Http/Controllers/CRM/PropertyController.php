@@ -29,7 +29,7 @@ class PropertyController extends Controller
             ...$request->validated(),
         ]);
 
-        return redirect()->route('crm.properties.index')->with('success', 'Property created successfully.');
+        return redirect()->route('crm.dashboard', ['tab' => 'inventory'])->with('success', 'Property created successfully.');
     }
 
     public function show(Property $property)

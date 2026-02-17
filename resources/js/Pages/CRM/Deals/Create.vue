@@ -16,9 +16,11 @@ const form = useForm({
     expected_close_date: '',
 });
 
+const submit = () => {
     form.post(route('crm.deals.store'), {
         onSuccess: () => form.reset(),
     });
+};
 </script>
 
 <template>
