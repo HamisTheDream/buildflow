@@ -7,13 +7,8 @@ FROM serversideup/php:8.2-fpm-nginx
 WORKDIR /var/www/html
 
 # Install additional PHP extensions if needed
-USER root
-RUN apt-get update && apt-get install -y \
-    php8.2-intl \
-    php8.2-gd \
-    php8.2-bcmath \
-    php8.2-zip \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Extensions are pre-installed in serversideup image
+
 
 # Fix permissions
 RUN chown -R webuser:webgroup /var/www/html
