@@ -202,7 +202,7 @@ function deleteLog(id:number) {
                 </div>
 
                 <div class="pt-2">
-                    <PrimaryButton class="w-full justify-center" :disabled="addForm.processing">
+                    <PrimaryButton type="submit" class="w-full justify-center" :disabled="addForm.processing">
                         Submit Daily Report
                     </PrimaryButton>
                 </div>

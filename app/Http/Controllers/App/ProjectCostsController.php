@@ -158,6 +158,11 @@ class ProjectCostsController extends Controller
 
         $data = $request->validated();
 
+        // Fallback: Default to approved if status is missing (e.g. stale frontend)
+        if (!isset($data['status'])) {
+            $data['status'] = 'approved';
+        }
+
         $cost = ProjectCost::create([
             'project_id' => $project->id,
             'created_by' => $request->user()->id,

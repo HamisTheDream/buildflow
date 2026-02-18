@@ -34,10 +34,10 @@ const submit = () => {
     })
 }
 
-const handleLogoUpload = (event: Event) => {
+const handleFileUpload = (event: Event, field: 'seo_logo' | 'site_icon') => {
     const target = event.target as HTMLInputElement;
     if (target.files && target.files.length > 0) {
-        form.settings.seo_logo = target.files[0];
+        form.settings[field] = target.files[0];
     }
 }
 

@@ -24,6 +24,8 @@
     @endphp
     @if($site_icon)
     <link rel="icon" href="{{ asset('storage/' . $site_icon) }}">
+    @else
+    <link rel="icon" href="{{ asset('favicon.ico') }}">
     @endif
 </head>
 

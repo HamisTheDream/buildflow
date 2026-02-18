@@ -53,11 +53,11 @@ class OwnerProfileController extends Controller
 
         // Delete old avatar if exists
         if ($admin->avatar_path) {
-            Storage::disk('public')->delete($admin->avatar_path);
+            Storage::delete($admin->avatar_path);
         }
 
         // Store new avatar
-        $path = $request->file('avatar')->store('avatars/admins', 'public');
+        $path = $request->file('avatar')->store('avatars/admins');
 
         $admin->update(['avatar_path' => $path]);
 
@@ -69,7 +69,7 @@ class OwnerProfileController extends Controller
         $admin = Auth::guard('owner')->user();
 
         if ($admin->avatar_path) {
-            Storage::disk('public')->delete($admin->avatar_path);
+            Storage::delete($admin->avatar_path);
             $admin->update(['avatar_path' => null]);
         }
 

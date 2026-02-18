@@ -70,6 +70,7 @@ const editingCost = ref<any>(null)
 const form = useForm({
     cost_date: new Date().toISOString().split('T')[0],
     category: '',
+    status: 'approved', // Default to approved so it counts towards budget
     vendor: '',
     payment_method: 'transfer',
     amount: '',
@@ -95,6 +96,7 @@ function openEdit(cost: any) {
     editingCost.value = cost
     form.cost_date = cost.cost_date || ''
     form.category = cost.category
+    form.status = cost.status || 'pending'
     form.vendor = cost.vendor || ''
     form.payment_method = cost.payment_method || 'transfer'
     form.amount = cost.amount
@@ -323,7 +325,7 @@ function statusTone(status: string) {
         <div class="p-6">
             <h2 class="text-lg font-medium text-gray-900 mb-6">{{ editingCost ? 'Edit Cost' : 'New Cost' }}</h2>
             <form @submit.prevent="submit" class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                          <InputLabel value="Amount" />
                          <TextInput type="number" step="0.01" v-model="form.amount" class="mt-1 block w-full" required autofocus />
@@ -331,6 +333,12 @@ function statusTone(status: string) {
                      <div>
                         <InputLabel value="Date" />
                          <TextInput type="date" v-model="form.cost_date" class="mt-1 block w-full" required />
+                    </div>
+                    <div>
+                        <InputLabel value="Status" />
+                        <select v-model="form.status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                            <option v-for="s in statuses" :key="s" :value="s">{{ formatEnum(s) }}</option>
+                        </select>
                     </div>
                 </div>
                 

@@ -135,7 +135,7 @@ class ProjectReportsController extends Controller
         $token = Str::random(40);
         $fileName = "projects/{$project->id}/reports/" . now()->format('Ymd_His') . "_" . Str::slug($project->name) . ".pdf";
 
-        Storage::disk('public')->put($fileName, $pdfBytes);
+        Storage::put($fileName, $pdfBytes);
 
         $expiresAt = !empty($data['share_expires_days'])
             ? now()->addDays((int)$data['share_expires_days'])
@@ -153,7 +153,8 @@ class ProjectReportsController extends Controller
             'title' => $title,
             'type' => $data['type'],
             'options' => $options,
-            'pdf_disk' => 'public',
+            'options' => $options,
+            'pdf_disk' => config('filesystems.default'),
             'pdf_path' => $fileName,
             'share_token' => $token,
             'share_expires_at' => $expiresAt,

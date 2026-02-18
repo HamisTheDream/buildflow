@@ -28,7 +28,7 @@ class ExpenseController extends Controller
 
         // Handle file upload
         if ($request->hasFile('receipt')) {
-            $path = $request->file('receipt')->store('receipts', 'public');
+            $path = $request->file('receipt')->store('receipts');
             $data['receipt_path'] = $path;
         }
 
@@ -60,7 +60,7 @@ class ExpenseController extends Controller
     public function destroy(Expense $expense)
     {
         if ($expense->receipt_path) {
-            Storage::disk('public')->delete($expense->receipt_path);
+            Storage::delete($expense->receipt_path);
         }
 
         $expense->delete();
