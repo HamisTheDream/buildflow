@@ -175,7 +175,7 @@ function submitReply() {
               <input v-model="updateForm.audit_reason" class="mt-1 w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="e.g. Resolved issue" />
             </div>
 
-            <button class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black" :disabled="updateForm.processing">
+            <button type="submit" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black" :disabled="updateForm.processing">
               Update
             </button>
           </form>
@@ -186,7 +186,7 @@ function submitReply() {
           <form class="space-y-3" @submit.prevent="noteForm.post(`/owner/support/${ticket.id}/notes`, { preserveScroll:true, onSuccess: () => noteForm.note='' })">
             <textarea v-model="noteForm.note" rows="3" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="Add an internal note..."></textarea>
             <input v-model="noteForm.audit_reason" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="Audit reason (optional)" />
-            <button class="w-full rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700" :disabled="noteForm.processing">
+            <button type="submit" class="w-full rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700" :disabled="noteForm.processing">
               Add Note
             </button>
           </form>

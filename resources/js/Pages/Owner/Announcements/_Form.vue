@@ -149,14 +149,14 @@ function onTargetChange() {
     </div>
 
     <div class="flex items-center justify-between">
-      <button class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+      <button type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
               :disabled="form.processing">
         {{ mode === 'create' ? 'Create' : 'Save changes' }}
       </button>
 
       <div v-if="canDelete && deleteAction" class="flex items-center gap-2">
         <form :action="deleteAction" method="post" @submit.prevent="form.delete(deleteAction)">
-          <button class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
+          <button type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
             Delete
           </button>
         </form>

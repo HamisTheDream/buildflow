@@ -150,7 +150,7 @@ const deleteDepartment = (department: any) => {
 
                     <div class="mt-6 flex justify-end gap-3">
                         <SecondaryButton @click="closeModal">Cancel</SecondaryButton>
-                        <PrimaryButton :disabled="form.processing">
+                        <PrimaryButton type="submit" :disabled="form.processing">
                             {{ editingDepartment ? 'Update' : 'Create' }}
                         </PrimaryButton>
                     </div>

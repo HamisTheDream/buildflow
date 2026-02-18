@@ -244,7 +244,7 @@ const confirmUpdateStage = () => {
                     <div v-if="reactivateForm.mode !== 'free'">
                        <input v-model="reactivateForm.days" type="number" placeholder="Days" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 text-sm focus:border-brand-500 focus:ring-brand-500" />
                     </div>
-                    <button class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white" :disabled="reactivateForm.processing">Reactivate</button>
+                    <button type="submit" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white" :disabled="reactivateForm.processing">Reactivate</button>
                    </form>
                 </details>
 
@@ -257,7 +257,7 @@ const confirmUpdateStage = () => {
                    <form class="mt-3 space-y-3" @submit.prevent="extendTrialForm.post(`/owner/organizations/${organization.id}/extend-trial`)">
                        <input v-model="extendTrialForm.days" type="number" placeholder="Days" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 text-sm focus:border-brand-500 focus:ring-brand-500" />
                        <input v-model="extendTrialForm.reason" placeholder="Reason" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 text-sm focus:border-brand-500 focus:ring-brand-500" />
-                    <button class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white" :disabled="extendTrialForm.processing">Extend</button>
+                    <button type="submit" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white" :disabled="extendTrialForm.processing">Extend</button>
                    </form>
                 </details>
 
@@ -269,7 +269,7 @@ const confirmUpdateStage = () => {
                   </summary>
                    <form class="mt-3 space-y-3" @submit.prevent="suspendForm.post(`/owner/organizations/${organization.id}/suspend`)">
                        <input v-model="suspendForm.reason" placeholder="Reason (Required)" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 text-sm focus:border-brand-500 focus:ring-brand-500" />
-                    <button class="w-full rounded-lg bg-red-600 px-3 py-2 text-sm text-white" :disabled="suspendForm.processing">Suspend</button>
+                    <button type="submit" class="w-full rounded-lg bg-red-600 px-3 py-2 text-sm text-white" :disabled="suspendForm.processing">Suspend</button>
                    </form>
                 </details>
              </div>

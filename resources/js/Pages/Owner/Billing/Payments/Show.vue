@@ -76,6 +76,7 @@ const noteForm = useForm({ note: '' })
             </div>
 
             <button
+              type="submit"
               class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-black disabled:opacity-50"
               :disabled="verifyForm.processing || !admin?.is_super"
             >
@@ -92,7 +93,7 @@ const noteForm = useForm({ note: '' })
       <SectionCard title="Notes" subtitle="Internal notes for ops.">
         <form class="space-y-3" @submit.prevent="noteForm.post(`/owner/billing/payments/${payment.id}/notes`, { preserveScroll:true, onSuccess: () => noteForm.note='' })">
           <textarea v-model="noteForm.note" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" rows="3" placeholder="Add a note..."></textarea>
-          <button class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700" :disabled="noteForm.processing">
+          <button type="submit" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700" :disabled="noteForm.processing">
             Add note
           </button>
         </form>
