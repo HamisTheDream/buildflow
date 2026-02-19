@@ -15,6 +15,8 @@ const form = useForm({
   password_confirmation: '',
   account_type: 'individual' as 'individual' | 'company',
   organization_name: '',
+  currency: 'NGN',
+  website: '', // Honeypot
 })
 
 const needsOrgName = computed(() => form.account_type === 'company')
@@ -159,6 +161,12 @@ const submit = () => {
           placeholder="••••••••"
         />
         <InputError class="mt-2" :message="form.errors.password_confirmation" />
+      </div>
+
+      <!-- Honeypot (Hidden) -->
+      <div class="hidden">
+        <label for="website">Website</label>
+        <input id="website" type="text" v-model="form.website" tabindex="-1" autocomplete="off">
       </div>
 
       <PrimaryButton 

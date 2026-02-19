@@ -101,6 +101,18 @@ class HandleInertiaRequests extends InertiaMiddleware
                     : null;
             }),
             // Active announcements for this user's org/plan
+            'onboarding_stats' => function () use ($isUser, $org) {
+                if (!$isUser || !$org) return [];
+                return cache()->remember('onboarding_stats:' . $org->id, 60, function () use ($org) {
+                    return [
+                        'projects_count' => $org->projects()->count(),
+                        'members_count' => $org->users()->count(),
+                        // Add other necessary counts for onboarding steps
+                        'recent_activity_count' => \App\Models\ProjectLog::whereIn('project_id', $org->projects()->select('id'))->count(),
+                        'tasks_count' => \App\Models\ProjectTask::whereIn('project_id', $org->projects()->select('id'))->count(),
+                    ];
+                });
+            },
             'announcements' => function () use ($isUser, $org) {
                 if (!$isUser || !$org) return [];
 

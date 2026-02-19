@@ -41,6 +41,12 @@ class RegisteredUserController extends Controller
             'organization_name' => ['nullable', 'string', 'max:255'],
         ]);
 
+        // Honeypot check
+        if ($request->filled('website')) {
+            // Silently fail or redirect
+            return redirect()->route('login');
+        }
+
         $accountType = $request->string('account_type')->toString();
 
         if ($accountType === 'company' && !$request->filled('organization_name')) {

@@ -16,7 +16,7 @@ function dismiss() {
 }
 
 const steps = computed(() => {
-  const stats = page.props.stats || page.props.dashboardStats || {}
+  const stats = page.props.onboarding_stats || page.props.stats || page.props.dashboardStats || {}
   return [
     {
       key: 'create_project',

@@ -35,9 +35,11 @@ Route::get('/privacy', function () {
 
 
 Route::middleware('guest')->group(function () {
-    Route::get('/invites/{token}', [InviteAcceptanceController::class, 'show'])->name('invites.show');
-    Route::post('/invites/{token}', [InviteAcceptanceController::class, 'store'])->name('invites.accept');
+    // Guest only routes
 });
+
+Route::get('/invites/{token}', [InviteAcceptanceController::class, 'show'])->name('invites.show');
+Route::post('/invites/{token}', [InviteAcceptanceController::class, 'store'])->name('invites.accept');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
