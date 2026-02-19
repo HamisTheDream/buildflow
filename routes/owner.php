@@ -100,5 +100,8 @@ Route::middleware('web')->group(function () {
         // Platform HR
         Route::resource('owner/hr/employees', \App\Http\Controllers\Owner\HR\OwnerEmployeesController::class)->names('owner.hr.employees');
         Route::resource('owner/hr/departments', \App\Http\Controllers\Owner\HR\OwnerDepartmentsController::class)->names('owner.hr.departments')->only(['index', 'store', 'update', 'destroy']);
+
+        // Visitor Analytics
+        Route::get('/owner/visitors', [\App\Http\Controllers\Owner\VisitorController::class, 'index'])->name('owner.visitors.index');
     });
 });

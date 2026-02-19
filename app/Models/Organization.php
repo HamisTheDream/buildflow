@@ -20,6 +20,16 @@ class Organization extends Model
                 $org->trial_ends_at = now()->addDays(14);
             }
         });
+
+        static::created(function ($org) {
+            $defaults = ['Sales & Marketing', 'Accounts', 'HR', 'Admin', 'Legal'];
+            foreach ($defaults as $name) {
+                \App\Models\HR\Department::create([
+                    'organization_id' => $org->id,
+                    'name' => $name,
+                ]);
+            }
+        });
     }
 
     protected $fillable = [

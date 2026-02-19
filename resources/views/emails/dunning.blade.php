@@ -1,26 +1,26 @@
-<!doctype html>
-<html>
-  <body style="font-family: Arial, sans-serif;">
-    <h2>BuildFlow subscription notice</h2>
+<x-mail::message>
+  # Action Required: Subscription Notice
 
-    <p>Hello {{ $org->name }},</p>
+  Hello {{ $org->name }},
 
-    @if($stage === 1)
-      <p>Your subscription has entered a grace period. Please renew to avoid interruption.</p>
-    @elseif($stage === 2)
-      <p>This is a reminder to renew your BuildFlow subscription.</p>
-    @else
-      <p><strong>Final notice:</strong> your access may be paused if payment is not completed.</p>
-    @endif
+  @if($stage === 1)
+  Your subscription has entered a grace period. Please renew to avoid interruption to your services.
+  @elseif($stage === 2)
+  This is a reminder to renew your BuildFlow subscription.
+  @else
+  **Final Notice:** Your access may be paused if payment is not completed immediately.
+  @endif
 
-    @if($graceEndsAt)
-      <p>Grace period ends: <strong>{{ $graceEndsAt->toDayDateTimeString() }}</strong></p>
-    @endif
+  @if($graceEndsAt)
+  **Grace Period Ends:** {{ $graceEndsAt->toDayDateTimeString() }}
+  @endif
 
-    <p>
-      <a href="{{ $billingUrl }}">Open Billing</a>
-    </p>
+  <x-mail::button :url="$billingUrl">
+    Renew Subscription
+  </x-mail::button>
 
-    <p>— BuildFlow Team</p>
-  </body>
-</html>
+  If you have already made payment, please ignore this message.
+
+  Thanks,<br>
+  {{ config('app.name') }}
+</x-mail::message>

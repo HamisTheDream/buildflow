@@ -1,14 +1,14 @@
-<!doctype html>
-<html>
-<head><meta charset="utf-8"></head>
-<body>
-    <p><strong>{{ $title }}</strong></p>
-    <p>Project: {{ $projectName }}</p>
+<x-mail::message>
+    # {{ $title }}
+
+    **Project:** {{ $projectName }}
 
     @if($customMessage)
-        <p>{!! nl2br(e($customMessage)) !!}</p>
+    {{ $customMessage }}
     @endif
 
-    <p>Attached is your BuildFlow report PDF.</p>
-</body>
-</html>
+    Attached is your BuildFlow report PDF.
+
+    Thanks,<br>
+    {{ config('app.name') }}
+</x-mail::message>

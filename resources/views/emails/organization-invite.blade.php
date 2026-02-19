@@ -1,18 +1,20 @@
-@component('mail::message')
-# You’re invited to join {{ $orgName }}
+<x-mail::message>
+    # Join {{ $orgName }} on BuildFlow
 
-You’ve been invited to join **{{ $orgName }}** on BuildFlow as **{{ $role }}**.
+    Hello,
 
-@component('mail::button', ['url' => $inviteUrl])
-Accept Invite
-@endcomponent
+    You have been invited to join the team at **{{ $orgName }}** on BuildFlow. You have been assigned the role of **{{ $role }}**.
 
-@if($expiresAt)
-This invite expires on: **{{ $expiresAt }}**
-@endif
+    <x-mail::button :url="$inviteUrl">
+        Join Team
+    </x-mail::button>
 
-If you didn’t expect this invite, you can ignore this email.
+    @if($expiresAt)
+    This invitation will expire on **{{ $expiresAt }}**.
+    @endif
 
-Thanks,  
-{{ config('app.name') }}
-@endcomponent
+    If you were not expecting this invitation, you can safely ignore this email.
+
+    Welcome aboard,<br>
+    The {{ config('app.name') }} Team
+</x-mail::message>

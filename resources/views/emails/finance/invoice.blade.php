@@ -1,34 +1,19 @@
-<!DOCTYPE html>
-<html>
+<x-mail::message>
+    # New Invoice from {{ $invoice->organization->name }}
 
-<head>
-    <meta charset="utf-8">
-    <title>New Invoice</title>
-</head>
+    Hi,
 
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-    <p>Hi,</p>
+    Please find attached your invoice **{{ $invoice->number }}** from **{{ $invoice->organization->name }}**.
 
-    <p>Please find attached your invoice <strong>{{ $invoice->number }}</strong> from <strong>{{ $invoice->organization->name }}</strong>.</p>
+    **Invoice Amount:** {{ $invoice->currency }} {{ number_format($invoice->total_amount_cents / 100, 2) }}<br>
+    **Due Date:** {{ $invoice->due_date->format('M d, Y') }}
 
-    <p>
-        <strong>Invoice Amount:</strong> {{ $invoice->currency }} {{ number_format($invoice->total_amount_cents / 100, 2) }}<br>
-        <strong>Due Date:</strong> {{ $invoice->due_date->format('M d, Y') }}
-    </p>
+    <x-mail::button :url="$url">
+        View & Pay Invoice
+    </x-mail::button>
 
-    <p style="margin: 30px 0;">
-        <a href="{{ $url }}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View & Pay Invoice</a>
-    </p>
+    If you have any questions, please contact us.
 
-    <p>If the button above doesn't work, copy and paste this link into your browser:<br>
-        <a href="{{ $url }}">{{ $url }}</a>
-    </p>
-
-    <p>If you have any questions, please contact us.</p>
-
-    <p>Best regards,<br>
-        {{ $invoice->organization->name }}
-    </p>
-</body>
-
-</html>
+    Best regards,<br>
+    {{ $invoice->organization->name }}
+</x-mail::message>

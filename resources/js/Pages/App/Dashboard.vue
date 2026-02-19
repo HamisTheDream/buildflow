@@ -4,7 +4,7 @@ import { Head, Link, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import StatCard from '@/Components/StatCard.vue'
 import Badge from '@/Components/Badge.vue'
-import OnboardingChecklist from '@/Components/OnboardingChecklist.vue'
+
 import DoughnutChart from '@/Components/Charts/DoughnutChart.vue'
 import BarChart from '@/Components/Charts/BarChart.vue'
 import LineChart from '@/Components/Charts/LineChart.vue'
@@ -14,13 +14,7 @@ const page = usePage()
 const user = computed(() => (page.props as any).auth?.user)
 const org = computed(() => (page.props as any).auth?.organization)
 
-const stats = computed(() => (page.props as any).stats || {
-  projects_count: 0, open_issues_count: 0, pending_costs_sum: 0,
-  recent_activity_count: 0, overdue_tasks_count: 0,
-  leads_count: 0, deals_count: 0,
-  total_revenue: 0, outstanding_invoices: 0, total_expenses: 0,
-  employees_count: 0, pending_leaves: 0,
-})
+const stats = computed(() => (page.props as any).stats || {})
 
 const recentProjects = computed(() => ((page.props as any).recentProjects as any[]) || [])
 const recentActivity = computed(() => ((page.props as any).recentActivity as any[]) || [])
@@ -124,24 +118,47 @@ const hasChartData = computed(() => {
 
         <!-- Stats Grid — Row 1 -->
         <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          <StatCard title="Projects" :value="stats.projects_count" icon="folder" variant="brand" />
-          <StatCard title="Total Revenue" :value="formatMoney(stats.total_revenue)" icon="revenue" variant="success" />
+          <StatCard title="Projects" :value="stats.projects_count ?? 0" icon="folder" variant="brand" />
+          
           <StatCard 
+            v-if="stats.total_revenue !== undefined"
+            title="Total Revenue" :value="formatMoney(stats.total_revenue)" icon="revenue" variant="success" 
+          />
+          
+          <StatCard 
+            v-if="stats.open_issues_count !== undefined"
             title="Open Issues" :value="stats.open_issues_count" icon="issue"
             :variant="stats.open_issues_count > 0 ? 'warning' : 'default'"
           />
-          <StatCard title="Team Members" :value="stats.employees_count" icon="users" />
+          
+          <StatCard 
+            v-if="stats.employees_count !== undefined"
+            title="Team Members" :value="stats.employees_count" icon="users" 
+          />
+          
+          <!-- Fallback or additional cards if needed -->
         </div>
 
         <!-- Stats Grid — Row 2 -->
         <div class="mt-3 grid grid-cols-2 gap-3 sm:mt-4 sm:gap-4 lg:grid-cols-4">
-          <StatCard title="CRM Leads" :value="stats.leads_count" :hint="stats.deals_count + ' deals'" />
           <StatCard 
+            v-if="stats.leads_count !== undefined"
+            title="CRM Leads" :value="stats.leads_count" :hint="stats.deals_count + ' deals'" 
+          />
+          
+          <StatCard 
+            v-if="stats.outstanding_invoices !== undefined"
             title="Outstanding" :value="formatMoney(stats.outstanding_invoices)" icon="cost"
             :variant="stats.outstanding_invoices > 0 ? 'warning' : 'default'"
           />
-          <StatCard title="Expenses" :value="formatMoney(stats.total_expenses)" icon="cost" />
+          
           <StatCard 
+            v-if="stats.total_expenses !== undefined"
+            title="Expenses" :value="formatMoney(stats.total_expenses)" icon="cost" 
+          />
+          
+          <StatCard 
+            v-if="stats.overdue_tasks_count !== undefined"
             title="Overdue Tasks" :value="stats.overdue_tasks_count" icon="issue"
             :variant="stats.overdue_tasks_count > 0 ? 'error' : 'default'"
             :hint="stats.overdue_tasks_count > 0 ? 'Needs attention' : 'On track'"
@@ -174,7 +191,7 @@ const hasChartData = computed(() => {
               />
             </div>
 
-            <!-- Budget vs Actual -->
+            <!-- Budget vs Actual (Finance) -->
             <div v-if="budgetChart && budgetChart.labels.length" class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
               <BarChart 
                 title="Budget vs Actual Spend" 
@@ -199,6 +216,7 @@ const hasChartData = computed(() => {
         <!-- Module Quick Actions -->
         <div class="mt-6 grid grid-cols-1 gap-4 sm:mt-8 sm:grid-cols-3 sm:gap-5">
           <Link
+            v-if="stats.leads_count !== undefined"
             href="/app/crm"
             class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-5 text-white shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 sm:p-6"
           >
@@ -211,6 +229,7 @@ const hasChartData = computed(() => {
           </Link>
 
           <Link
+            v-if="stats.total_revenue !== undefined"
             href="/app/finance"
             class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 p-5 text-white shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 sm:p-6"
           >
@@ -223,6 +242,7 @@ const hasChartData = computed(() => {
           </Link>
 
           <Link
+            v-if="stats.employees_count !== undefined"
             href="/app/hr"
             class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 to-violet-700 p-5 text-white shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 sm:p-6"
           >
@@ -357,7 +377,5 @@ const hasChartData = computed(() => {
       </div>
     </div>
 
-    <!-- Onboarding Checklist -->
-    <OnboardingChecklist />
   </AuthenticatedLayout>
 </template>

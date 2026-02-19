@@ -90,10 +90,12 @@ class PaystackWebhookController extends Controller
 
                 $org = Organization::find($payment->organization_id);
                 // Handle Subscription Payments (Only if plan_id exists)
-                if ($org && $payment->plan_id) {
+                if ($org && ($payment->plan_id || data_get($data, 'metadata.plan_id'))) {
                     $days = (int) data_get($data, 'metadata.days', 30);
-                    $planId = data_get($data, 'metadata.plan_id');
-                    $lifecycle->applySuccessfulPayment($org, $days, $planId ? (int)$planId : null);
+                    $metaPlanId = data_get($data, 'metadata.plan_id');
+                    $planId = $metaPlanId ? (int)$metaPlanId : $payment->plan_id;
+
+                    $lifecycle->applySuccessfulPayment($org, $days, $planId);
                 }
             });
         }

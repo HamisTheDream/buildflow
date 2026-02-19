@@ -54,6 +54,12 @@ class AppServiceProvider extends ServiceProvider
         // Register humanized validation messages
         \Illuminate\Support\Facades\Validator::replacer('required', fn($m, $a, $r, $p) => "Please enter {$a}.");
 
+        // Register event listeners
+        \Illuminate\Support\Facades\Event::listen(
+            \Illuminate\Auth\Events\Registered::class,
+            \App\Listeners\SendWelcomeEmail::class,
+        );
+
         // Configure rate limiters
         $this->configureRateLimiting();
     }

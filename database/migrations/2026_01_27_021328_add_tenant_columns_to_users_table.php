@@ -8,18 +8,40 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('current_organization_id')->nullable()
-                ->after('id')
-                ->constrained('organizations')
-                ->nullOnDelete();
+            if (!Schema::hasColumn('users', 'current_organization_id')) {
+                $table->foreignId('current_organization_id')->nullable()
+                    ->after('id')
+                    ->constrained('organizations')
+                    ->nullOnDelete();
+            }
 
-            $table->boolean('is_invited_only')->default(false)->after('password');
+            if (!Schema::hasColumn('users', 'is_invited_only')) {
+                $table->boolean('is_invited_only')->default(false)->after('password');
+            }
 
-            $table->string('phone')->nullable()->after('email');
-            $table->string('avatar_path')->nullable()->after('phone');
+            if (!Schema::hasColumn('users', 'phone')) {
+                $table->string('phone')->nullable()->after('email');
+            }
+            if (!Schema::hasColumn('users', 'avatar_path')) {
+                $table->string('avatar_path')->nullable()->after('phone');
+            }
+            if (!Schema::hasColumn('users', 'is_active')) {
+                $table->boolean('is_active')->default(true)->after('avatar_path');
+            }
 
-            $table->index(['current_organization_id']);
-            $table->index(['is_invited_only']);
+            // Safely add indexes
+            $sm = Schema::getConnection()->getDoctrineSchemaManager();
+            $indexes = $sm->listTableIndexes('users');
+
+            if (!array_key_exists('users_current_organization_id_index', $indexes)) {
+                $table->index(['current_organization_id']);
+            }
+            if (!array_key_exists('users_is_invited_only_index', $indexes)) {
+                $table->index(['is_invited_only']);
+            }
+            if (!array_key_exists('users_is_active_index', $indexes)) {
+                $table->index(['is_active']);
+            }
         });
     }
 

@@ -9,6 +9,7 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import NotificationsBell from '@/Components/NotificationsBell.vue';
 import SkipLink from '@/Components/SkipLink.vue';
 import FlashMessage from '@/Components/FlashMessage.vue';
+import OnboardingChecklist from '@/Components/OnboardingChecklist.vue';
 
 const showingNavigationDropdown = ref(false);
 const sidebarOpen = ref(false);
@@ -428,6 +429,7 @@ const toneClasses = {
                 </div>
             </footer>
         </div>
+        <OnboardingChecklist />
         <FlashMessage />
     </div>
 </template>

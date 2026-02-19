@@ -2,8 +2,8 @@
 defineProps<{
   title: string
   value: string | number
-  icon?: 'folder' | 'issue' | 'cost' | 'activity' | 'users' | 'ticket' | 'revenue'
-  variant?: 'default' | 'warning' | 'success' | 'brand'
+  icon?: 'folder' | 'issue' | 'cost' | 'activity' | 'users' | 'ticket' | 'revenue' | 'eye' | 'clock'
+  variant?: 'default' | 'warning' | 'success' | 'brand' | 'error'
   hint?: string
   trend?: 'up' | 'down' | 'neutral'
   trendValue?: string
@@ -17,6 +17,8 @@ const icons: Record<string, string> = {
   users: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
   ticket: 'M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z',
   revenue: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+  eye: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z',
+  clock: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
 }
 </script>
 
@@ -29,6 +31,7 @@ const icons: Record<string, string> = {
         'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-50/50': variant === 'warning',
         'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-50/50': variant === 'success',
         'border-brand-200 bg-gradient-to-br from-brand-50 to-brand-50/50': variant === 'brand',
+        'border-red-200 bg-gradient-to-br from-red-50 to-red-50/50': variant === 'error',
       }
     ]"
   >
@@ -43,6 +46,7 @@ const icons: Record<string, string> = {
               'text-amber-700': variant === 'warning',
               'text-emerald-700': variant === 'success',
               'text-brand-700': variant === 'brand',
+              'text-red-700': variant === 'error',
             }
           ]"
         >
@@ -91,6 +95,7 @@ const icons: Record<string, string> = {
             'bg-amber-100': variant === 'warning',
             'bg-emerald-100': variant === 'success',
             'bg-brand-100': variant === 'brand',
+            'bg-red-100': variant === 'error',
           }
         ]"
       >
@@ -102,6 +107,7 @@ const icons: Record<string, string> = {
               'text-amber-600': variant === 'warning',
               'text-emerald-600': variant === 'success',
               'text-brand-600': variant === 'brand',
+              'text-red-600': variant === 'error',
             }
           ]"
           fill="none" 

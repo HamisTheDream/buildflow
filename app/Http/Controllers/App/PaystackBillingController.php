@@ -55,6 +55,7 @@ class PaystackBillingController extends Controller
             'metadata' => [
                 'org_id' => $org->id,
                 'plan_key' => $plan->key,
+                'plan_id' => $plan->id,
                 'user_id' => $user->id,
             ],
         ]);

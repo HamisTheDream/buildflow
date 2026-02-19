@@ -39,14 +39,18 @@ class TrackVisitors
         }
 
         try {
-            VisitorLog::create([
+            $log = VisitorLog::create([
                 'ip_address' => $request->ip(),
                 'url' => $request->fullUrl(),
                 'user_agent' => $request->userAgent(),
                 'user_id' => $request->user()?->id,
                 'referer' => $request->header('referer'),
                 'visit_time' => now(),
+                'session_id' => session()->getId(),
             ]);
+
+            // Dispatch job to enrich data (async)
+            \App\Jobs\EnrichVisitorData::dispatch($log->id)->afterResponse();
 
             // Mark as tracked for 5 minutes
             cache()->put($cacheKey, true, 300);
