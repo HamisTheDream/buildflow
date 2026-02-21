@@ -32,11 +32,21 @@ class UsageService
 
     public function withinLimits(Organization $org): array
     {
-        // First check if a plan is explicitly attached, otherwise fallback
-        $plan = $org->plan_id ? \App\Models\Plan::find($org->plan_id) : $org->effectivePlan();
         $usage = $this->getUsage($org);
 
+        // Fetch explicitly assigned plan
+        $plan = $org->plan_id ? \App\Models\Plan::find($org->plan_id) : clone $org->effectivePlan();
+
+        // If no plan was explicitly found, OR if they are on Free, but they are in an active Trial, give them Pro limits:
+        if ($org->isTrialActive()) {
+            $proPlan = \App\Models\Plan::where('key', 'pro')->first();
+            if ($proPlan) {
+                $plan = clone $proPlan; // Grant pro access during trial
+            }
+        }
+
         if (!$plan) {
+            // Absolute fail-safe if DB is completely empty (no seeders)
             return [
                 'usage' => $usage,
                 'limits' => ['max_projects' => 1, 'max_members' => 3, 'max_storage_mb' => 200],
@@ -49,7 +59,7 @@ class UsageService
             ];
         }
 
-        $active = $org->isActiveAccess();
+        $active = $org->hasAppAccess();
 
         if (!$active) {
             return [
