@@ -94,12 +94,12 @@ class HandleInertiaRequests extends InertiaMiddleware
                     'is_super' => (bool) $ownerAdmin->is_super,
                 ] : null,
             ],
-            // Lazy-load entitlements — only computed when the component needs them
-            'entitlements' => Inertia::lazy(function () use ($isUser, $user, $org) {
+            // Send entitlements on load so UI gating correctly evaluated
+            'entitlements' => function () use ($isUser, $user, $org) {
                 return ($isUser && $user)
                     ? app(\App\Services\EntitlementsService::class)->forOrg($org)
                     : null;
-            }),
+            },
             // Active announcements for this user's org/plan
             'onboarding_stats' => function () use ($isUser, $org) {
                 if (!$isUser || !$org) return [];
