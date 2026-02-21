@@ -399,7 +399,7 @@ const deleteBudget = (id: number) => {
                             </div>
                         </div>
                         <div class="flex justify-end gap-3 pt-2">
-                            <button type="button" type="button" @click="showBudgetModal = false" class="text-gray-700 text-sm font-medium hover:text-gray-900 px-3 py-2">Cancel</button>
+                            <button type="button" @click="showBudgetModal = false" class="text-gray-700 text-sm font-medium hover:text-gray-900 px-3 py-2">Cancel</button>
                             <button type="submit" :disabled="budgetForm.processing" class="bg-brand-600 text-white text-sm font-semibold rounded-lg px-4 py-2 hover:bg-brand-500 disabled:opacity-50 transition">
                                 {{ budgetForm.processing ? 'Creating...' : 'Create Budget' }}
                             </button>

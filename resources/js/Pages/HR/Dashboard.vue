@@ -416,7 +416,7 @@ const deleteLeave = (id: number) => {
                             </select>
                         </div>
                         <div class="flex justify-end gap-3 pt-2">
-                            <button type="button" type="button" @click="showDeptModal = false" class="text-gray-700 text-sm font-medium hover:text-gray-900 px-3 py-2">Cancel</button>
+                            <button type="button" @click="showDeptModal = false" class="text-gray-700 text-sm font-medium hover:text-gray-900 px-3 py-2">Cancel</button>
                             <button type="submit" :disabled="deptForm.processing" class="bg-brand-600 text-white text-sm font-semibold rounded-lg px-4 py-2 hover:bg-brand-500 disabled:opacity-50 transition">Save</button>
                         </div>
                     </form>
@@ -464,7 +464,7 @@ const deleteLeave = (id: number) => {
                             <textarea v-model="leaveForm.reason" rows="3" class="mt-1 block w-full rounded-lg border-gray-300 bg-white text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"></textarea>
                         </div>
                         <div class="flex justify-end gap-3 pt-2">
-                            <button type="button" type="button" @click="showLeaveModal = false" class="text-gray-700 text-sm font-medium hover:text-gray-900 px-3 py-2">Cancel</button>
+                            <button type="button" @click="showLeaveModal = false" class="text-gray-700 text-sm font-medium hover:text-gray-900 px-3 py-2">Cancel</button>
                             <button type="submit" :disabled="leaveForm.processing" class="bg-brand-600 text-white text-sm font-semibold rounded-lg px-4 py-2 hover:bg-brand-500 disabled:opacity-50 transition">Submit Request</button>
                         </div>
                     </form>
