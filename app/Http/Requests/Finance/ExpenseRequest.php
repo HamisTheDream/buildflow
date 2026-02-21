@@ -19,7 +19,13 @@ class ExpenseRequest extends FormRequest
             'amount' => 'required|numeric|min:0',
             'incurred_date' => 'required|date',
             'description' => 'required|string|max:255',
-            'receipt' => 'nullable|file|mimes:jpeg,png,pdf|max:10240', // 10MB
+            'receipt' => [
+                'nullable',
+                'file',
+                'mimes:jpeg,png,pdf',
+                'max:10240',
+                new \App\Rules\SafeFile,
+            ],
             'reimbursable_to' => 'nullable|exists:users,id',
         ];
     }

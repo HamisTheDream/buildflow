@@ -54,3 +54,21 @@ router.on('finish', (event) => {
         toast.info(flash.message);
     }
 });
+
+// Analytics tracking
+import mixpanel from 'mixpanel-browser';
+
+const mixpanelToken = import.meta.env.VITE_MIXPANEL_TOKEN;
+if (mixpanelToken) {
+    mixpanel.init(mixpanelToken, { debug: import.meta.env.DEV, track_pageview: true, persistence: 'localStorage' });
+}
+
+// Track Inertia page navigations
+router.on('navigate', (event) => {
+    if (mixpanelToken) {
+        mixpanel.track_pageview({
+            "url": window.location.href,
+            "path": window.location.pathname
+        });
+    }
+});

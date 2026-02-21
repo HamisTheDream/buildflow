@@ -18,29 +18,32 @@ class SendDripEmails implements ShouldQueue
     {
         // Day 1: Welcome / Getting Started
         $day1Users = User::whereDate('created_at', now()->subDays(1))
-            ->whereNull('email_verified_at') // Example condition, or maybe all
+            ->whereNotNull('email_verified_at')
             ->get();
 
         foreach ($day1Users as $user) {
-            // Mail::to($user)->send(new \App\Mail\Drip\Day1Welcome($user));
+            Mail::to($user)->send(new \App\Mail\Day1Welcome($user));
         }
 
         // Day 3: Feature Highlight
         $day3Users = User::whereDate('created_at', now()->subDays(3))->get();
         foreach ($day3Users as $user) {
-            // Mail::to($user)->send(new \App\Mail\Drip\Day3Features($user));
+            Mail::to($user)->send(new \App\Mail\Day3Features($user));
         }
 
-        // Day 25: Trial Expiry Warning (assuming 30 day trial)
-        // We look for org owners whose trial expires in 5 days
+        // Trial Expiry Warning (14 day trial, email 3 days before expiry)
         $expiringOrgs = \App\Models\Organization::where('subscription_status', 'trial')
-            ->whereDate('trial_ends_at', now()->addDays(5))
-            ->with('users') // simpler than finding "owner" manually if we just email all admins
+            ->whereDate('trial_ends_at', now()->addDays(3))
+            ->with(['users' => function ($q) {
+                $q->wherePivot('role', 'owner');
+            }])
             ->get();
 
         foreach ($expiringOrgs as $org) {
-            // Email the owner
-            // Mail::to($org->ownerUser())->send(new \App\Mail\Drip\TrialEndingSoon($org));
+            $owner = $org->users->first();
+            if ($owner) {
+                Mail::to($owner)->send(new \App\Mail\TrialEndingSoon($org));
+            }
         }
     }
 }

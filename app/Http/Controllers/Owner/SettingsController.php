@@ -26,8 +26,8 @@ class SettingsController extends Controller
             'plans.*.price_monthly_cents' => 'required|integer|min:0',
             'settings' => 'array',
             'settings.support_email' => 'nullable|email',
-            'settings.seo_logo' => 'nullable|file|image|max:2048',
-            'settings.site_icon' => 'nullable|file|image|max:1024', // New Icon (Favicon/App Icon)
+            'settings.seo_logo' => ['nullable', 'file', 'image', 'max:2048', new \App\Rules\SafeFile],
+            'settings.site_icon' => ['nullable', 'file', 'image', 'max:1024', new \App\Rules\SafeFile], // New Icon (Favicon/App Icon)
             'settings.site_title' => 'nullable|string|max:255',
             'settings.site_description' => 'nullable|string|max:500',
             'settings.site_keywords' => 'nullable|string|max:500',

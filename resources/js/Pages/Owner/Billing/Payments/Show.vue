@@ -77,10 +77,15 @@ const noteForm = useForm({ note: '' })
 
             <button
               type="submit"
-              class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-black disabled:opacity-50"
+              class="flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-black disabled:opacity-50"
               :disabled="verifyForm.processing || !admin?.is_super"
             >
-              Verify via Paystack
+              <svg v-if="verifyForm.processing" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span v-if="verifyForm.processing">Verifying...</span>
+              <span v-else>Verify via Paystack</span>
             </button>
 
             <div v-if="!admin?.is_super" class="mt-2 text-xs text-red-600">
@@ -93,8 +98,13 @@ const noteForm = useForm({ note: '' })
       <SectionCard title="Notes" subtitle="Internal notes for ops.">
         <form class="space-y-3" @submit.prevent="noteForm.post(`/owner/billing/payments/${payment.id}/notes`, { preserveScroll:true, onSuccess: () => noteForm.note='' })">
           <textarea v-model="noteForm.note" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" rows="3" placeholder="Add a note..."></textarea>
-          <button type="submit" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700" :disabled="noteForm.processing">
-            Add note
+          <button type="submit" class="flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50" :disabled="noteForm.processing">
+            <svg v-if="noteForm.processing" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span v-if="noteForm.processing">Adding...</span>
+            <span v-else>Add note</span>
           </button>
         </form>
 

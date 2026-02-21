@@ -20,7 +20,7 @@ class ProjectAttachmentsController extends Controller
 
         $org = $project->organization;
         $gate = app(\App\Services\UsageService::class)->withinLimits($org);
-            
+
         if (!$gate['can']['upload']) {
             return back()->with('error', 'Storage limit reached. Upgrade to upload more files.');
         }
@@ -29,7 +29,7 @@ class ProjectAttachmentsController extends Controller
             'attachable_type' => ['required', 'string'],
             'attachable_id' => ['required', 'integer'],
             'files' => ['required', 'array', 'min:1'],
-            'files.*' => ['file', 'max:10240'], // 10MB
+            'files.*' => ['file', 'max:10240', new \App\Rules\SafeFile], // 10MB
             'caption' => ['nullable', 'string', 'max:255'],
         ]);
 

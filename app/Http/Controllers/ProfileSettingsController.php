@@ -34,7 +34,7 @@ class ProfileSettingsController extends Controller
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')->ignore($u->id)],
             'current_password' => ['nullable', 'string'], // required only if changing email
-            'avatar' => ['nullable', 'image', 'max:2048'], // 2MB
+            'avatar' => ['nullable', 'image', 'max:2048', new \App\Rules\SafeFile], // 2MB
         ]);
 
         $emailChanging = strtolower($data['email']) !== strtolower($u->email);

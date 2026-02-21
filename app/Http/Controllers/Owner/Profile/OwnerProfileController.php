@@ -14,6 +14,7 @@ class OwnerProfileController extends Controller
 {
     public function edit()
     {
+        /** @var \App\Models\Admin $admin */
         $admin = Auth::guard('owner')->user();
 
         return Inertia::render('Owner/Profile/Edit', [
@@ -31,6 +32,7 @@ class OwnerProfileController extends Controller
 
     public function update(Request $request)
     {
+        /** @var \App\Models\Admin $admin */
         $admin = Auth::guard('owner')->user();
 
         $validated = $request->validate([
@@ -45,10 +47,11 @@ class OwnerProfileController extends Controller
 
     public function updateAvatar(Request $request)
     {
+        /** @var \App\Models\Admin $admin */
         $admin = Auth::guard('owner')->user();
 
         $request->validate([
-            'avatar' => ['required', 'image', 'max:2048'], // 2MB max
+            'avatar' => ['required', 'image', 'max:2048', new \App\Rules\SafeFile], // 2MB max
         ]);
 
         // Delete old avatar if exists
@@ -66,6 +69,7 @@ class OwnerProfileController extends Controller
 
     public function deleteAvatar()
     {
+        /** @var \App\Models\Admin $admin */
         $admin = Auth::guard('owner')->user();
 
         if ($admin->avatar_path) {
@@ -78,6 +82,7 @@ class OwnerProfileController extends Controller
 
     public function updatePassword(Request $request)
     {
+        /** @var \App\Models\Admin $admin */
         $admin = Auth::guard('owner')->user();
 
         $validated = $request->validate([

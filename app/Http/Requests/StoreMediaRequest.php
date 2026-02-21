@@ -31,6 +31,7 @@ class StoreMediaRequest extends FormRequest
                 'file',
                 'max:20480', // 20MB max
                 'mimes:jpg,jpeg,png,gif,webp,mp4,mov,avi,webm,pdf,doc,docx,xls,xlsx,csv,txt',
+                new \App\Rules\SafeFile,
             ],
             'caption' => ['nullable', 'string', 'max:500'],
         ];
