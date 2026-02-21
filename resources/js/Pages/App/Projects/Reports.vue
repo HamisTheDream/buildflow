@@ -135,7 +135,7 @@ function typeTone(type: string) {
                 <h3 class="mt-2 text-sm font-medium text-gray-900">No reports yet</h3>
                 <p class="mt-1 text-sm text-gray-500">Generate your first status report to share with clients.</p>
                 <div class="mt-6">
-                     <button @click="openGenerator" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700">
+                     <button type="button" @click="openGenerator" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700">
                         Create Report
                     </button>
                 </div>

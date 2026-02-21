@@ -80,7 +80,7 @@ const deleteDepartment = (department: any) => {
                 <h1 class="text-2xl font-bold text-gray-900">Departments</h1>
                 <p class="text-sm text-gray-500">Manage organization units and structure</p>
             </div>
-            <button @click="openCreateModal" class="inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500">
+            <button type="button" @click="openCreateModal" class="inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500">
                 Add Department
             </button>
         </div>
@@ -104,8 +104,8 @@ const deleteDepartment = (department: any) => {
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ department.manager?.name || '—' }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ department.members_count }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button @click="openEditModal(department)" class="text-brand-600 hover:text-brand-900 mr-4">Edit</button>
-                            <button @click="deleteDepartment(department)" class="text-red-600 hover:text-red-900" :disabled="department.members_count > 0" :class="{'opacity-50 cursor-not-allowed': department.members_count > 0}">Delete</button>
+                            <button type="button" @click="openEditModal(department)" class="text-brand-600 hover:text-brand-900 mr-4">Edit</button>
+                            <button type="button" @click="deleteDepartment(department)" class="text-red-600 hover:text-red-900" :disabled="department.members_count > 0" :class="{'opacity-50 cursor-not-allowed': department.members_count > 0}">Delete</button>
                         </td>
                     </tr>
                 </tbody>

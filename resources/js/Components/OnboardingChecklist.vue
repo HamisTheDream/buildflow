@@ -46,7 +46,7 @@ const steps = computed(() => {
       key: 'invite_member',
       title: 'Invite a team member',
       description: 'Collaborate with your crew on site',
-      href: '/app/settings/team',
+      href: '/app/organization/members',
       completed: (stats.members_count ?? 1) > 1,
       emoji: '👥',
     },
@@ -55,7 +55,7 @@ const steps = computed(() => {
       title: 'Generate a report',
       description: 'Share progress updates with stakeholders',
       href: null,
-      completed: false, // Can't easily check from stats
+      completed: (stats.reports_count ?? 0) > 0,
       emoji: '📊',
     },
     {
@@ -63,7 +63,7 @@ const steps = computed(() => {
       title: 'Explore your plan',
       description: 'See features included in your plan',
       href: '/app/billing',
-      completed: false,
+      completed: !!stats.has_plan,
       emoji: '💎',
     },
   ]
@@ -136,7 +136,7 @@ const dashOffset = computed(() => circumference - (progressPercent.value / 100) 
               <p class="text-xs text-brand-100">{{ completedCount }} of {{ totalSteps }} steps</p>
             </div>
           </div>
-          <button @click="isOpen = false" class="rounded-lg p-1 hover:bg-white/20 transition">
+          <button type="button" @click="isOpen = false" class="rounded-lg p-1 hover:bg-white/20 transition">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
@@ -177,7 +177,7 @@ const dashOffset = computed(() => circumference - (progressPercent.value / 100) 
 
       <!-- Footer -->
       <div class="border-t border-gray-100 px-5 py-3">
-        <button @click="dismiss" class="text-xs text-gray-500 hover:text-gray-700 transition">
+        <button type="button" @click="dismiss" class="text-xs text-gray-500 hover:text-gray-700 transition">
           Dismiss checklist
         </button>
       </div>

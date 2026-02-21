@@ -30,16 +30,16 @@ return new class extends Migration {
             }
 
             // Safely add indexes
-            $sm = Schema::getConnection()->getDoctrineSchemaManager();
-            $indexes = $sm->listTableIndexes('users');
+            $indexes = Schema::getIndexes('users');
+            $indexNames = array_column($indexes, 'name');
 
-            if (!array_key_exists('users_current_organization_id_index', $indexes)) {
+            if (!in_array('users_current_organization_id_index', $indexNames)) {
                 $table->index(['current_organization_id']);
             }
-            if (!array_key_exists('users_is_invited_only_index', $indexes)) {
+            if (!in_array('users_is_invited_only_index', $indexNames)) {
                 $table->index(['is_invited_only']);
             }
-            if (!array_key_exists('users_is_active_index', $indexes)) {
+            if (!in_array('users_is_active_index', $indexNames)) {
                 $table->index(['is_active']);
             }
         });

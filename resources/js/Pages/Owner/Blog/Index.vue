@@ -68,7 +68,7 @@ const confirmDelete = (id: number) => {
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <Link :href="`/owner/blog/${post.id}/edit`" class="text-brand-600 hover:text-brand-900 mr-4">Edit</Link>
-                                <button @click="confirmDelete(post.id)" class="text-red-600 hover:text-red-900">Delete</button>
+                                <button type="button" @click="confirmDelete(post.id)" class="text-red-600 hover:text-red-900">Delete</button>
                             </td>
                         </tr>
                         <tr v-if="posts.data.length === 0">

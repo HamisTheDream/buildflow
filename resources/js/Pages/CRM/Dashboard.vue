@@ -330,7 +330,7 @@ const inventoryRate = computed(() => {
                         <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5">
                             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
                                 <h3 class="text-sm font-semibold text-gray-900">Recent Leads</h3>
-                                <button @click="switchTab('leads')" class="text-xs text-brand-600 hover:text-brand-500 font-medium">View All →</button>
+                                <button type="button" @click="switchTab('leads')" class="text-xs text-brand-600 hover:text-brand-500 font-medium">View All →</button>
                             </div>
                             <ul class="divide-y divide-gray-100">
                                 <li v-for="lead in recentLeads" :key="lead.id" class="px-6 py-3 flex items-center justify-between">
@@ -351,7 +351,7 @@ const inventoryRate = computed(() => {
                         <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-900/5">
                             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
                                 <h3 class="text-sm font-semibold text-gray-900">Active Sales</h3>
-                                <button @click="switchTab('sales')" class="text-xs text-brand-600 hover:text-brand-500 font-medium">View Pipeline →</button>
+                                <button type="button" @click="switchTab('sales')" class="text-xs text-brand-600 hover:text-brand-500 font-medium">View Pipeline →</button>
                             </div>
                             <ul class="divide-y divide-gray-100">
                                 <li v-for="deal in recentDeals" :key="deal.id" class="px-6 py-3 flex items-center justify-between">

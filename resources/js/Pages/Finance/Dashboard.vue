@@ -155,7 +155,7 @@ const deleteBudget = (id: number) => {
                         <div class="bg-white overflow-hidden shadow-sm rounded-xl">
                             <div class="p-6 border-b border-gray-100 flex justify-between items-center">
                                 <h3 class="font-semibold text-gray-900">Recent Invoices</h3>
-                                <button @click="setTab('invoices')" class="text-sm text-brand-600 hover:text-brand-500">View All &rarr;</button>
+                                <button type="button" @click="setTab('invoices')" class="text-sm text-brand-600 hover:text-brand-500">View All &rarr;</button>
                             </div>
                             <ul role="list" class="divide-y divide-gray-100">
                                 <li v-for="invoice in recent_invoices" :key="invoice.id" class="flex justify-between gap-x-6 py-4 px-6 hover:bg-gray-50">
@@ -181,7 +181,7 @@ const deleteBudget = (id: number) => {
                         <div class="bg-white overflow-hidden shadow-sm rounded-xl">
                             <div class="p-6 border-b border-gray-100 flex justify-between items-center">
                                 <h3 class="font-semibold text-gray-900">Recent Expenses</h3>
-                                <button @click="setTab('expenses')" class="text-sm text-brand-600 hover:text-brand-500">View All &rarr;</button>
+                                <button type="button" @click="setTab('expenses')" class="text-sm text-brand-600 hover:text-brand-500">View All &rarr;</button>
                             </div>
                             <ul role="list" class="divide-y divide-gray-100">
                                 <li v-for="expense in recent_expenses" :key="expense.id" class="flex justify-between gap-x-6 py-4 px-6 hover:bg-gray-50">
@@ -301,10 +301,10 @@ const deleteBudget = (id: number) => {
                                     <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-2">
                                         <a v-if="expense.receipt_path" :href="'/storage/' + expense.receipt_path" target="_blank" class="text-brand-600 hover:text-brand-800">Receipt</a>
                                         <template v-if="expense.status === 'pending'">
-                                            <button @click="updateExpenseStatus(expense, 'approved')" class="text-emerald-600 hover:text-emerald-800">Approve</button>
-                                            <button @click="updateExpenseStatus(expense, 'rejected')" class="text-red-600 hover:text-red-800">Reject</button>
+                                            <button type="button" @click="updateExpenseStatus(expense, 'approved')" class="text-emerald-600 hover:text-emerald-800">Approve</button>
+                                            <button type="button" @click="updateExpenseStatus(expense, 'rejected')" class="text-red-600 hover:text-red-800">Reject</button>
                                         </template>
-                                        <button @click="deleteExpense(expense)" class="text-gray-400 hover:text-red-600">Delete</button>
+                                        <button type="button" @click="deleteExpense(expense)" class="text-gray-400 hover:text-red-600">Delete</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -316,7 +316,7 @@ const deleteBudget = (id: number) => {
                 <div v-if="activeTab === 'budgets'" class="space-y-4">
                     <div class="flex justify-between items-center">
                         <p class="text-sm text-gray-500">{{ budgets.length }} budgets</p>
-                        <button @click="showBudgetModal = true" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 transition">
+                        <button type="button" @click="showBudgetModal = true" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 transition">
                             + Create Budget
                         </button>
                     </div>
@@ -328,7 +328,7 @@ const deleteBudget = (id: number) => {
                                     <h3 class="font-semibold text-lg text-gray-900">{{ budget.name }}</h3>
                                     <p class="text-sm text-gray-500 mt-0.5">{{ budget.project.name }}</p>
                                 </div>
-                                <button @click="deleteBudget(budget.id)" class="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 opacity-0 group-hover:opacity-100 transition">
+                                <button type="button" @click="deleteBudget(budget.id)" class="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 opacity-0 group-hover:opacity-100 transition">
                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>
@@ -399,7 +399,7 @@ const deleteBudget = (id: number) => {
                             </div>
                         </div>
                         <div class="flex justify-end gap-3 pt-2">
-                            <button type="button" @click="showBudgetModal = false" class="text-gray-700 text-sm font-medium hover:text-gray-900 px-3 py-2">Cancel</button>
+                            <button type="button" type="button" @click="showBudgetModal = false" class="text-gray-700 text-sm font-medium hover:text-gray-900 px-3 py-2">Cancel</button>
                             <button type="submit" :disabled="budgetForm.processing" class="bg-brand-600 text-white text-sm font-semibold rounded-lg px-4 py-2 hover:bg-brand-500 disabled:opacity-50 transition">
                                 {{ budgetForm.processing ? 'Creating...' : 'Create Budget' }}
                             </button>

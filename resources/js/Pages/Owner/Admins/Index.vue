@@ -38,7 +38,7 @@ function toggleActive(a:any) {
       <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div class="flex gap-2 w-full md:w-2/3">
           <input v-model="form.q" class="w-full rounded-lg border-gray-300 bg-white text-gray-900 p-2 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="Search by name/email..." />
-          <button @click="apply" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">Go</button>
+          <button type="button" @click="apply" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">Go</button>
         </div>
 
         <Link v-if="me.is_super" href="/owner/admins/create" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-black">

@@ -29,7 +29,13 @@ const greeting = computed(() => {
 })
 
 const orgRole = computed(() => (page.props as any).auth?.orgRole || null)
+const userDept = computed(() => (page.props as any).auth?.userContext?.department?.name?.toLowerCase() || '')
 const isOrgManager = computed(() => ['owner', 'admin'].includes(orgRole.value))
+
+// Determine visible modules based on role and department
+const showFinance = computed(() => isOrgManager.value || userDept.value.includes('account'))
+const showHR = computed(() => isOrgManager.value || userDept.value.includes('hr') || userDept.value.includes('human resource'))
+const showCRM = computed(() => isOrgManager.value || userDept.value.includes('sale') || userDept.value.includes('marketing'))
 
 const formatMoney = (cents: number) => {
   const c = orgCurrency.value
@@ -121,7 +127,7 @@ const hasChartData = computed(() => {
           <StatCard title="Projects" :value="stats.projects_count ?? 0" icon="folder" variant="brand" />
           
           <StatCard 
-            v-if="stats.total_revenue !== undefined"
+            v-if="showFinance && stats.total_revenue !== undefined"
             title="Total Revenue" :value="formatMoney(stats.total_revenue)" icon="revenue" variant="success" 
           />
           
@@ -132,28 +138,26 @@ const hasChartData = computed(() => {
           />
           
           <StatCard 
-            v-if="stats.employees_count !== undefined"
+            v-if="showHR && stats.employees_count !== undefined"
             title="Team Members" :value="stats.employees_count" icon="users" 
           />
-          
-          <!-- Fallback or additional cards if needed -->
         </div>
 
         <!-- Stats Grid — Row 2 -->
         <div class="mt-3 grid grid-cols-2 gap-3 sm:mt-4 sm:gap-4 lg:grid-cols-4">
           <StatCard 
-            v-if="stats.leads_count !== undefined"
+            v-if="showCRM && stats.leads_count !== undefined"
             title="CRM Leads" :value="stats.leads_count" :hint="stats.deals_count + ' deals'" 
           />
           
           <StatCard 
-            v-if="stats.outstanding_invoices !== undefined"
+            v-if="showFinance && stats.outstanding_invoices !== undefined"
             title="Outstanding" :value="formatMoney(stats.outstanding_invoices)" icon="cost"
             :variant="stats.outstanding_invoices > 0 ? 'warning' : 'default'"
           />
           
           <StatCard 
-            v-if="stats.total_expenses !== undefined"
+            v-if="showFinance && stats.total_expenses !== undefined"
             title="Expenses" :value="formatMoney(stats.total_expenses)" icon="cost" 
           />
           
@@ -216,7 +220,7 @@ const hasChartData = computed(() => {
         <!-- Module Quick Actions -->
         <div class="mt-6 grid grid-cols-1 gap-4 sm:mt-8 sm:grid-cols-3 sm:gap-5">
           <Link
-            v-if="stats.leads_count !== undefined"
+            v-if="showCRM && stats.leads_count !== undefined"
             href="/app/crm"
             class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-5 text-white shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 sm:p-6"
           >
@@ -229,7 +233,7 @@ const hasChartData = computed(() => {
           </Link>
 
           <Link
-            v-if="stats.total_revenue !== undefined"
+            v-if="showFinance && stats.total_revenue !== undefined"
             href="/app/finance"
             class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 p-5 text-white shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 sm:p-6"
           >
@@ -242,7 +246,7 @@ const hasChartData = computed(() => {
           </Link>
 
           <Link
-            v-if="stats.employees_count !== undefined"
+            v-if="showHR && stats.employees_count !== undefined"
             href="/app/hr"
             class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 to-violet-700 p-5 text-white shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 sm:p-6"
           >

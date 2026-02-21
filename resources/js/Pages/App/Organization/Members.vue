@@ -142,7 +142,7 @@ function revoke(inviteId: number) {
                   </div>
 
                   <div class="flex flex-wrap gap-2">
-                    <button class="rounded bg-gray-100 px-3 py-1 text-sm hover:bg-gray-200" @click="copy(i.invite_url)">
+                    <button type="button" class="rounded bg-gray-100 px-3 py-1 text-sm hover:bg-gray-200" @click="copy(i.invite_url)">
                       Copy link
                     </button>
                     <a class="rounded bg-gray-100 px-3 py-1 text-sm hover:bg-gray-200" :href="i.invite_url" target="_blank">

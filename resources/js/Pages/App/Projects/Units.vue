@@ -121,8 +121,8 @@ function deleteUnit(unit: any) {
             </div>
 
             <div v-if="canManage" class="flex justify-end gap-2 mt-2 pt-2 border-t border-gray-100">
-                <button @click="openModal(unit)" class="text-sm font-medium text-gray-600 hover:text-indigo-600">Edit</button>
-                <button @click="deleteUnit(unit)" class="text-sm font-medium text-gray-400 hover:text-red-600">Delete</button>
+                <button type="button" @click="openModal(unit)" class="text-sm font-medium text-gray-600 hover:text-indigo-600">Edit</button>
+                <button type="button" @click="deleteUnit(unit)" class="text-sm font-medium text-gray-400 hover:text-red-600">Delete</button>
             </div>
         </div>
     </div>

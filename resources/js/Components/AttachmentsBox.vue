@@ -66,7 +66,7 @@ function prettySize(bytes:number) {
     <form v-if="canUpload" class="mt-3 space-y-2" @submit.prevent="upload">
       <input type="file" multiple class="block w-full text-sm" @change="onFiles" />
       <input v-model="form.caption" class="w-full rounded-lg border p-2 text-sm" placeholder="Caption (optional)" />
-      <button class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50" :disabled="form.processing">
+      <button type="button" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50" :disabled="form.processing">
         Add attachments
       </button>
       <div v-if="form.errors['files']" class="text-sm text-red-600">{{ form.errors['files'] }}</div>
@@ -101,7 +101,7 @@ function prettySize(bytes:number) {
         </div>
         <div class="mt-1 text-sm text-gray-700">{{ a.caption || '—' }}</div>
 
-        <button v-if="canManage || a.can_delete" class="mt-2 rounded bg-red-50 px-3 py-2 text-sm text-red-700 hover:bg-red-100" @click="remove(a.id)">
+        <button type="button" v-if="canManage || a.can_delete" class="mt-2 rounded bg-red-50 px-3 py-2 text-sm text-red-700 hover:bg-red-100" @click="remove(a.id)">
           Remove
         </button>
       </div>

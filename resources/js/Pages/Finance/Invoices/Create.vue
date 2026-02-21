@@ -190,7 +190,7 @@ const submit = () => {
                                     </div>
                                 </div>
                                 
-                                <button type="button" @click="addItem" class="mt-4 text-sm text-brand-600 font-medium hover:text-brand-500 flex items-center gap-1">
+                                <button type="button" type="button" @click="addItem" class="mt-4 text-sm text-brand-600 font-medium hover:text-brand-500 flex items-center gap-1">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                     Add Item
                                 </button>

@@ -104,12 +104,15 @@ class HandleInertiaRequests extends InertiaMiddleware
             'onboarding_stats' => function () use ($isUser, $org) {
                 if (!$isUser || !$org) return [];
                 return cache()->remember('onboarding_stats:' . $org->id, 60, function () use ($org) {
+                    $projectIds = $org->projects()->select('id');
                     return [
                         'projects_count' => $org->projects()->count(),
                         'members_count' => $org->users()->count(),
                         // Add other necessary counts for onboarding steps
-                        'recent_activity_count' => \App\Models\ProjectLog::whereIn('project_id', $org->projects()->select('id'))->count(),
-                        'tasks_count' => \App\Models\ProjectTask::whereIn('project_id', $org->projects()->select('id'))->count(),
+                        'recent_activity_count' => \App\Models\ProjectLog::whereIn('project_id', $projectIds)->count(),
+                        'tasks_count' => \App\Models\ProjectTask::whereIn('project_id', $projectIds)->count(),
+                        'reports_count' => \App\Models\ProjectReport::whereIn('project_id', $projectIds)->count(),
+                        'has_plan' => $org->plan_id !== null,
                     ];
                 });
             },

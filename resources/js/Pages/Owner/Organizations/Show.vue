@@ -215,7 +215,7 @@ const confirmUpdateStage = () => {
                 </div>
               </div>
 
-              <button @click="trashTask(task.id)" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500">
+              <button type="button" @click="trashTask(task.id)" class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500">
                 &times;
               </button>
             </div>

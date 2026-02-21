@@ -17,4 +17,7 @@
 
     Welcome aboard,<br>
     The {{ config('app.name') }} Team
+
+    ---
+    *A better way to manage construction projects.*
 </x-mail::message>

@@ -298,10 +298,10 @@ function statusTone(status: string) {
                             {{ formatDate(cost.cost_date) }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                             <button @click="openEdit(cost)" class="text-gray-600 font-medium hover:underline opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+                             <button type="button" @click="openEdit(cost)" class="text-gray-600 font-medium hover:underline opacity-0 group-hover:opacity-100 transition-opacity mr-2">
                                 Edit
                              </button>
-                              <button @click="deleteCost(cost)" class="text-red-600 font-medium hover:underline opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button type="button" @click="deleteCost(cost)" class="text-red-600 font-medium hover:underline opacity-0 group-hover:opacity-100 transition-opacity">
                                 Delete
                              </button>
                         </td>

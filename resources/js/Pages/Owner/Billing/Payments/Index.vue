@@ -46,7 +46,7 @@ function tone(s:string) {
           </select>
         </div>
         <div class="md:col-span-1">
-          <button @click="apply" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+          <button type="button" @click="apply" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">
             Go
           </button>
         </div>

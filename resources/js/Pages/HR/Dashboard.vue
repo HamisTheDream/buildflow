@@ -162,7 +162,7 @@ const deleteLeave = (id: number) => {
                         <div class="bg-white overflow-hidden shadow-sm rounded-xl">
                             <div class="p-6 border-b border-gray-100 flex justify-between items-center">
                                 <h3 class="font-semibold text-gray-900">Recent Hires</h3>
-                                <button @click="setTab('staff')" class="text-sm text-brand-600 hover:text-brand-500">View All &rarr;</button>
+                                <button type="button" @click="setTab('staff')" class="text-sm text-brand-600 hover:text-brand-500">View All &rarr;</button>
                             </div>
                             <ul role="list" class="divide-y divide-gray-100">
                                 <li v-for="emp in recent_hires" :key="emp.id" class="flex justify-between gap-x-6 py-4 px-6 hover:bg-gray-50">
@@ -187,7 +187,7 @@ const deleteLeave = (id: number) => {
                         <div class="bg-white overflow-hidden shadow-sm rounded-xl">
                             <div class="p-6 border-b border-gray-100 flex justify-between items-center">
                                 <h3 class="font-semibold text-gray-900">Upcoming Leave</h3>
-                                <button @click="setTab('leave')" class="text-sm text-brand-600 hover:text-brand-500">View All &rarr;</button>
+                                <button type="button" @click="setTab('leave')" class="text-sm text-brand-600 hover:text-brand-500">View All &rarr;</button>
                             </div>
                             <ul role="list" class="divide-y divide-gray-100">
                                 <li v-for="leave in upcoming_leaves" :key="leave.id" class="flex justify-between gap-x-6 py-4 px-6 hover:bg-gray-50">
@@ -270,7 +270,7 @@ const deleteLeave = (id: number) => {
                 <div v-if="activeTab === 'departments'" class="space-y-4">
                     <div class="flex justify-between items-center">
                         <p class="text-sm text-gray-500">{{ departments.length }} departments</p>
-                        <button @click="openCreateDept" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 transition">
+                        <button type="button" @click="openCreateDept" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 transition">
                             + Add Department
                         </button>
                     </div>
@@ -283,10 +283,10 @@ const deleteLeave = (id: number) => {
                                     <p class="text-sm text-gray-500 mt-1">Manager: {{ dept.manager ? dept.manager.name : 'Unassigned' }}</p>
                                 </div>
                                 <div class="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button @click="openEditDept(dept)" class="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition">
+                                    <button type="button" @click="openEditDept(dept)" class="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition">
                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                     </button>
-                                    <button @click="deleteDept(dept.id)" class="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition">
+                                    <button type="button" @click="deleteDept(dept.id)" class="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition">
                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                     </button>
                                 </div>
@@ -347,7 +347,7 @@ const deleteLeave = (id: number) => {
                 <div v-if="activeTab === 'leave'" class="space-y-4">
                     <div class="flex justify-between items-center">
                         <p class="text-sm text-gray-500">{{ leaves.length }} leave requests</p>
-                        <button @click="showLeaveModal = true" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 transition">
+                        <button type="button" @click="showLeaveModal = true" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 transition">
                             + New Request
                         </button>
                     </div>
@@ -383,9 +383,9 @@ const deleteLeave = (id: number) => {
                                     </td>
                                     <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-2">
                                         <template v-if="leave.status === 'pending'">
-                                            <button @click="updateLeaveStatus(leave, 'approved')" class="text-emerald-600 hover:text-emerald-800">Approve</button>
-                                            <button @click="updateLeaveStatus(leave, 'rejected')" class="text-red-600 hover:text-red-800">Reject</button>
-                                            <button @click="deleteLeave(leave.id)" class="text-gray-400 hover:text-gray-600">Delete</button>
+                                            <button type="button" @click="updateLeaveStatus(leave, 'approved')" class="text-emerald-600 hover:text-emerald-800">Approve</button>
+                                            <button type="button" @click="updateLeaveStatus(leave, 'rejected')" class="text-red-600 hover:text-red-800">Reject</button>
+                                            <button type="button" @click="deleteLeave(leave.id)" class="text-gray-400 hover:text-gray-600">Delete</button>
                                         </template>
                                     </td>
                                 </tr>
@@ -416,7 +416,7 @@ const deleteLeave = (id: number) => {
                             </select>
                         </div>
                         <div class="flex justify-end gap-3 pt-2">
-                            <button type="button" @click="showDeptModal = false" class="text-gray-700 text-sm font-medium hover:text-gray-900 px-3 py-2">Cancel</button>
+                            <button type="button" type="button" @click="showDeptModal = false" class="text-gray-700 text-sm font-medium hover:text-gray-900 px-3 py-2">Cancel</button>
                             <button type="submit" :disabled="deptForm.processing" class="bg-brand-600 text-white text-sm font-semibold rounded-lg px-4 py-2 hover:bg-brand-500 disabled:opacity-50 transition">Save</button>
                         </div>
                     </form>
@@ -464,7 +464,7 @@ const deleteLeave = (id: number) => {
                             <textarea v-model="leaveForm.reason" rows="3" class="mt-1 block w-full rounded-lg border-gray-300 bg-white text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"></textarea>
                         </div>
                         <div class="flex justify-end gap-3 pt-2">
-                            <button type="button" @click="showLeaveModal = false" class="text-gray-700 text-sm font-medium hover:text-gray-900 px-3 py-2">Cancel</button>
+                            <button type="button" type="button" @click="showLeaveModal = false" class="text-gray-700 text-sm font-medium hover:text-gray-900 px-3 py-2">Cancel</button>
                             <button type="submit" :disabled="leaveForm.processing" class="bg-brand-600 text-white text-sm font-semibold rounded-lg px-4 py-2 hover:bg-brand-500 disabled:opacity-50 transition">Submit Request</button>
                         </div>
                     </form>

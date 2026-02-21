@@ -32,7 +32,8 @@ class UsageService
 
     public function withinLimits(Organization $org): array
     {
-        $plan = $org->effectivePlan();
+        // First check if a plan is explicitly attached, otherwise fallback
+        $plan = $org->plan_id ? \App\Models\Plan::find($org->plan_id) : $org->effectivePlan();
         $usage = $this->getUsage($org);
 
         if (!$plan) {
@@ -54,9 +55,9 @@ class UsageService
             return [
                 'usage' => $usage,
                 'limits' => [
-                    'max_projects' => 0,
-                    'max_members' => 0,
-                    'max_storage_mb' => 0,
+                    'max_projects' => $plan->max_projects,
+                    'max_members' => $plan->max_members,
+                    'max_storage_mb' => $plan->max_storage_mb,
                 ],
                 'can' => [
                     'create_project' => false,
