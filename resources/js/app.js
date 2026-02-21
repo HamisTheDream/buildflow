@@ -59,13 +59,25 @@ router.on('finish', (event) => {
 import mixpanel from 'mixpanel-browser';
 
 const mixpanelToken = import.meta.env.VITE_MIXPANEL_TOKEN;
-if (mixpanelToken) {
-    mixpanel.init(mixpanelToken, { debug: import.meta.env.DEV, track_pageview: true, persistence: 'localStorage' });
+
+// Function to initialize Mixpanel securely only if consented
+const initMixpanel = () => {
+    if (mixpanelToken && localStorage.getItem('buildflow_cookie_consent') === 'accepted') {
+        mixpanel.init(mixpanelToken, { debug: import.meta.env.DEV, track_pageview: true, persistence: 'localStorage' });
+    }
 }
+
+// Check on load
+initMixpanel();
+
+// Listen for the custom event emitted by CookieConsentBanner.vue
+window.addEventListener('cookie_consent_accepted', () => {
+    initMixpanel();
+});
 
 // Track Inertia page navigations
 router.on('navigate', (event) => {
-    if (mixpanelToken) {
+    if (mixpanelToken && localStorage.getItem('buildflow_cookie_consent') === 'accepted') {
         mixpanel.track_pageview({
             "url": window.location.href,
             "path": window.location.pathname

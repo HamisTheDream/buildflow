@@ -73,7 +73,7 @@ Route::middleware('web')->group(function () {
         Route::post('/owner/settings', [\App\Http\Controllers\Owner\SettingsController::class, 'update'])->name('owner.settings.update');
 
         // Blog Management
-        Route::resource('owner/blog', \App\Http\Controllers\Owner\BlogController::class);
+        Route::resource('owner/blog', \App\Http\Controllers\Owner\BlogController::class)->names('owner.blog');
 
         // Admins
         Route::get('/owner/admins', [OwnerAdminsController::class, 'index'])->name('owner.admins.index');

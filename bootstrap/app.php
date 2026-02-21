@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
             \App\Http\Middleware\TrackVisitors::class,
+            \App\Http\Middleware\TrackPageVisits::class,
             \App\Http\Middleware\BlockBots::class,
             // \App\Http\Middleware\ContentSecurityPolicy::class, // Temporarily disabled for debugging
         ]);

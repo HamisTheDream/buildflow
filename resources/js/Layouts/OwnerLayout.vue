@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import FlashMessage from '@/Components/FlashMessage.vue'
 import NotificationsBell from '@/Components/NotificationsBell.vue'
+import CookieConsentBanner from '@/Components/CookieConsentBanner.vue'
 
 const page = usePage<any>()
 const admin = computed(() => page.props.ownerAuth?.admin)
@@ -230,5 +231,6 @@ const isActive = (match: string) => page.url.startsWith(match)
     </div>
 
     <FlashMessage />
+    <CookieConsentBanner />
   </div>
 </template>

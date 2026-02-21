@@ -1,7 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
+import CookieConsentBanner from '@/Components/CookieConsentBanner.vue';
 </script>
-
 <template>
   <div class="flex min-h-screen">
     <!-- Left Panel: Branding -->
@@ -81,5 +81,7 @@ import { Link } from '@inertiajs/vue3';
         <slot />
       </div>
     </div>
+    
+    <CookieConsentBanner />
   </div>
 </template>

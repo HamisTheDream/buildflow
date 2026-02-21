@@ -10,6 +10,7 @@ import NotificationsBell from '@/Components/NotificationsBell.vue';
 import SkipLink from '@/Components/SkipLink.vue';
 import FlashMessage from '@/Components/FlashMessage.vue';
 import OnboardingChecklist from '@/Components/OnboardingChecklist.vue';
+import CookieConsentBanner from '@/Components/CookieConsentBanner.vue';
 
 const showingNavigationDropdown = ref(false);
 const sidebarOpen = ref(false);
@@ -245,6 +246,12 @@ const toneClasses = {
                         >
                             Profile Settings
                          </Link>
+                         <Link 
+                            :href="route('settings.privacy')" 
+                            class="block px-4 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white transition-colors"
+                        >
+                            Privacy & Data
+                         </Link>
                          <div class="border-t border-slate-700 my-1"></div>
                          <Link 
                             :href="route('logout')" 
@@ -431,5 +438,6 @@ const toneClasses = {
         </div>
         <OnboardingChecklist />
         <FlashMessage />
+        <CookieConsentBanner />
     </div>
 </template>

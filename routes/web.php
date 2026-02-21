@@ -49,6 +49,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/app/settings/profile', [ProfileSettingsController::class, 'edit'])->name('settings.profile');
     Route::patch('/app/settings/profile', [ProfileSettingsController::class, 'updateProfile'])->name('settings.profile.update');
     Route::patch('/app/settings/security/password', [ProfileSettingsController::class, 'updatePassword'])->name('settings.password.update');
+
+    // Privacy & GDPR
+    Route::get('/app/settings/privacy', [\App\Http\Controllers\PrivacyController::class, 'edit'])->name('settings.privacy');
+    Route::post('/app/settings/privacy/export', [\App\Http\Controllers\PrivacyController::class, 'exportData'])->name('settings.privacy.export');
+    Route::delete('/app/settings/privacy/delete', [\App\Http\Controllers\PrivacyController::class, 'deleteAccount'])->name('settings.privacy.delete');
 });
 
 Route::middleware(['auth'])->group(function () {

@@ -35,10 +35,57 @@ class OwnerAnalyticsController extends Controller
             ->pluck('total', 'subscription_status')
             ->toArray();
 
-        // 4. Mixpanel configuration status
+        // 4. Native Page Visit Analytics (GDPR Compliant Logs)
+        $today = $now->copy()->startOfDay();
+
+        // Active Users (Distinct User IDs that visited)
+        $dau = \App\Models\PageVisit::where('created_at', '>=', $today)
+            ->whereNotNull('user_id')
+            ->distinct('user_id')
+            ->count('user_id');
+
+        $mau = \App\Models\PageVisit::where('created_at', '>=', $thisMonth)
+            ->whereNotNull('user_id')
+            ->distinct('user_id')
+            ->count('user_id');
+
+        // Top 10 Most Visited Paths (Last 30 Days)
+        $thirtyDaysAgo = $now->copy()->subDays(30);
+        $topPages = \App\Models\PageVisit::select('path', \Illuminate\Support\Facades\DB::raw('count(*) as views'))
+            ->where('created_at', '>=', $thirtyDaysAgo)
+            ->groupBy('path')
+            ->orderByDesc('views')
+            ->limit(10)
+            ->get();
+
+        // Browser & Device Share (Last 30 Days)
+        $deviceShare = \App\Models\PageVisit::select('device_type', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+            ->where('created_at', '>=', $thirtyDaysAgo)
+            ->whereNotNull('device_type')
+            ->groupBy('device_type')
+            ->pluck('total', 'device_type');
+
+        $browserShare = \App\Models\PageVisit::select('browser', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+            ->where('created_at', '>=', $thirtyDaysAgo)
+            ->whereNotNull('browser')
+            ->groupBy('browser')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->pluck('total', 'browser');
+
+        // Location Info (Last 30 Days)
+        $topCountries = \App\Models\PageVisit::select('country', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+            ->where('created_at', '>=', $thirtyDaysAgo)
+            ->whereNotNull('country')
+            ->groupBy('country')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->pluck('total', 'country');
+
+        // 5. Mixpanel configuration status
         $mixpanelToken = config('services.mixpanel.token', env('VITE_MIXPANEL_TOKEN'));
 
-        // 5. Growth Data for Charts (Last 12 months for deeper analytics than the dashboard)
+        // 6. Growth Data for Charts (Last 12 months for deeper analytics than the dashboard)
         $monthlySignups = collect(range(11, 0))->map(function ($monthsAgo) {
             $start = now()->subMonths($monthsAgo)->startOfMonth();
             $end = now()->subMonths($monthsAgo)->endOfMonth();
@@ -68,11 +115,19 @@ class OwnerAnalyticsController extends Controller
                 'projects_this_month' => $projectsThisMonth,
                 'total_users' => $totalUsers,
                 'users_this_month' => $usersThisMonth,
+                'dau' => $dau,
+                'mau' => $mau,
             ],
             'org_status_distribution' => $orgStatusCounts,
             'charts' => [
                 'growth' => $monthlySignups,
                 'revenue' => $monthlyRevenue,
+            ],
+            'native_insights' => [
+                'top_pages' => $topPages,
+                'device_share' => $deviceShare,
+                'browser_share' => $browserShare,
+                'top_countries' => $topCountries,
             ],
             'mixpanel' => [
                 'configured' => !empty($mixpanelToken),

@@ -10,11 +10,19 @@ defineProps<{
     projects_this_month: number
     total_users: number
     users_this_month: number
+    dau: number
+    mau: number
   },
   org_status_distribution: Record<string, number>,
   charts: {
     growth: Array<{ month: string, organizations: number, users: number }>,
     revenue: Array<{ month: string, revenue_ngn: number }>
+  },
+  native_insights: {
+    top_pages: Array<{ path: string, views: number }>
+    device_share: Record<string, number>
+    browser_share: Record<string, number>
+    top_countries: Record<string, number>
   },
   mixpanel: {
     configured: boolean,
@@ -67,6 +75,16 @@ defineProps<{
           <div class="mt-2 text-3xl font-bold text-gray-900">{{ metrics.total_users }}</div>
           <div class="mt-1 text-xs text-brand-600 font-medium">+{{ metrics.users_this_month }} this month</div>
         </div>
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div class="text-sm font-medium text-gray-500">Daily Active Users</div>
+          <div class="mt-2 text-3xl font-bold text-gray-900">{{ metrics.dau }}</div>
+          <div class="mt-1 text-xs text-gray-500 font-medium tracking-wide">UNIQUE TODAY</div>
+        </div>
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div class="text-sm font-medium text-gray-500">Monthly Active Users</div>
+          <div class="mt-2 text-3xl font-bold text-gray-900">{{ metrics.mau }}</div>
+          <div class="mt-1 text-xs text-gray-500 font-medium tracking-wide">UNIQUE THIS MONTH</div>
+        </div>
       </div>
 
       <!-- Activity Tables via DB -->
@@ -104,6 +122,66 @@ defineProps<{
           </table>
         </div>
       </SectionCard>
+
+      <!-- Deeper Native Analytics -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        
+        <!-- Top Pages -->
+        <SectionCard title="Most Visited Pages (30 Days)" subtitle="Top 10 paths accessed by users">
+          <ul class="divide-y divide-gray-100 mt-2">
+            <li v-for="(page, index) in native_insights.top_pages" :key="index" class="py-3 flex items-center justify-between">
+              <span class="text-sm font-medium text-gray-900 truncate pr-4">{{ page.path }}</span>
+              <span class="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{{ page.views }} views</span>
+            </li>
+            <li v-if="native_insights.top_pages.length === 0" class="py-4 text-sm text-gray-500 text-center">No page visit data yet.</li>
+          </ul>
+        </SectionCard>
+
+        <div class="space-y-6">
+          <!-- Environments -->
+          <SectionCard title="Technology & Devices" subtitle="Browsers and Devices used in the last 30 days">
+            <div class="grid grid-cols-2 gap-4 mt-2">
+              <div>
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Top Browsers</h4>
+                <ul class="space-y-3">
+                  <li v-for="(count, browser) in native_insights.browser_share" :key="browser" class="flex justify-between items-center text-sm">
+                    <span class="text-gray-700 flex items-center gap-2">
+                      <div class="w-2 h-2 rounded-full bg-brand-500"></div> {{ browser }}
+                    </span>
+                    <span class="font-medium text-gray-900">{{ count }}</span>
+                  </li>
+                  <li v-if="Object.keys(native_insights.browser_share).length === 0" class="text-sm text-gray-500">No data</li>
+                </ul>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Device Types</h4>
+                <ul class="space-y-3">
+                  <li v-for="(count, device) in native_insights.device_share" :key="device" class="flex justify-between items-center text-sm">
+                    <span class="text-gray-700 flex items-center gap-2">
+                      <div class="w-2 h-2 rounded-full bg-gray-400"></div> {{ device || 'Unknown' }}
+                    </span>
+                    <span class="font-medium text-gray-900">{{ count }}</span>
+                  </li>
+                  <li v-if="Object.keys(native_insights.device_share).length === 0" class="text-sm text-gray-500">No data</li>
+                </ul>
+              </div>
+            </div>
+          </SectionCard>
+
+          <!-- Geography -->
+          <SectionCard title="Geographic Distribution" subtitle="Top countries in the last 30 days">
+             <ul class="divide-y divide-gray-100 mt-2">
+              <li v-for="(count, country) in native_insights.top_countries" :key="country" class="py-3 flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900 flex items-center gap-2">
+                  <span>🌍</span> {{ country }}
+                </span>
+                <span class="text-sm font-bold text-gray-700">{{ count }}</span>
+              </li>
+              <li v-if="Object.keys(native_insights.top_countries).length === 0" class="py-4 text-sm text-gray-500 text-center">No location data yet.</li>
+            </ul>
+          </SectionCard>
+        </div>
+      </div>
 
       <!-- Subscription Status Overview -->
       <SectionCard title="Subscription Distribution" subtitle="Aggregate of current organization statuses">
