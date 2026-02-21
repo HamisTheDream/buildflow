@@ -60,8 +60,8 @@ const navItems = computed(() => {
   if (modules.value.projects) {
       items.push({ 
           label: 'Dashboard', 
-          route: 'dashboard', 
-          active: route().current('dashboard'), 
+          route: 'app.dashboard', 
+          active: route().current('dashboard') || route().current('app.dashboard'), 
           icon: 'dashboard' 
       })
       items.push({ 
@@ -76,8 +76,8 @@ const navItems = computed(() => {
   if (modules.value.crm) {
       items.push({ 
           label: 'Sales & CRM', 
-          route: 'crm.dashboard', // Will create this route later
-          active: false, // route().current('crm.*')
+          route: 'crm.dashboard',
+          active: route().current('crm.*'),
           icon: 'crm' 
       })
   }
@@ -86,8 +86,8 @@ const navItems = computed(() => {
   if (modules.value.finance) {
       items.push({ 
           label: 'Finance', 
-          route: 'finance.dashboard', // Will create this route later 
-          active: false, // route().current('finance.*')
+          route: 'finance.dashboard',
+          active: route().current('finance.*'),
           icon: 'finance' 
       })
   }
@@ -96,8 +96,8 @@ const navItems = computed(() => {
   if (modules.value.hr) {
       items.push({ 
           label: 'HR & Payroll', 
-          route: 'hr.dashboard', // Will create this route later
-          active: false, // route().current('hr.*')
+          route: 'hr.dashboard',
+          active: route().current('hr.*'),
           icon: 'hr' 
       })
   }
