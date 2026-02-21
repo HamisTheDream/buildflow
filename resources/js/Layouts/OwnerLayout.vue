@@ -10,6 +10,7 @@ const sidebarOpen = ref(false)
 
 const navItems = [
   { label: 'Dashboard', href: '/owner/dashboard', icon: 'dashboard', match: '/owner/dashboard' },
+  { label: 'Analytics', href: '/owner/analytics', icon: 'analytics', match: '/owner/analytics' },
   { label: 'Organizations', href: '/owner/organizations', icon: 'orgs', match: '/owner/organizations' },
   { label: 'Billing', href: '/owner/billing/payments', icon: 'billing', match: '/owner/billing' },
   { label: 'Announcements', href: '/owner/announcements', icon: 'announcements', match: '/owner/announcements' },
@@ -72,6 +73,10 @@ const isActive = (match: string) => page.url.startsWith(match)
             <!-- Dashboard Icon -->
             <svg v-if="item.icon === 'dashboard'" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
+            <!-- Analytics Icon -->
+            <svg v-else-if="item.icon === 'analytics'" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
             <!-- Organizations Icon -->
             <svg v-else-if="item.icon === 'orgs'" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

@@ -6,6 +6,7 @@ use App\Http\Controllers\Owner\CMS\OwnerAnnouncementsController;
 use App\Http\Controllers\Owner\Support\OwnerSupportController;
 use App\Http\Controllers\Owner\Admins\OwnerAdminsController;
 use App\Http\Controllers\Owner\OwnerDashboardController;
+use App\Http\Controllers\Owner\OwnerAnalyticsController;
 
 Route::middleware('web')->group(function () {
 
@@ -21,6 +22,9 @@ Route::middleware('web')->group(function () {
 
         Route::get('/owner', fn() => redirect('/owner/dashboard'));
         Route::get('/owner/dashboard', [OwnerDashboardController::class, 'index'])->name('owner.dashboard');
+
+        // Analytics
+        Route::get('/owner/analytics', [OwnerAnalyticsController::class, 'index'])->name('owner.analytics.index');
 
         // Announcements
         Route::get('/owner/announcements', [OwnerAnnouncementsController::class, 'index'])->name('owner.announcements.index');
