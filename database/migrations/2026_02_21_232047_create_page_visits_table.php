@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('organization_id')->nullable()->constrained('organizations')->nullOnDelete();
 
-            $table->string('url', 2048);
-            $table->string('path', 1024);
+            $table->string('url', 1024);
+            $table->string('path', 512);
             $table->string('method', 10);
 
             // Device & Browser
