@@ -3,6 +3,7 @@
 namespace App\Models\Finance;
 
 use App\Models\Organization;
+use App\Models\Project;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -22,5 +23,10 @@ class Budget extends Model
     public function organization()
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class);
     }
 }

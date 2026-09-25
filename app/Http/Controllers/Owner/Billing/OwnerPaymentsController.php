@@ -22,8 +22,10 @@ class OwnerPaymentsController extends Controller
         $payments = Payment::query()
             ->with(['organization:id,name'])
             ->when($q, function ($query) use ($q) {
-                $query->where('reference', 'like', "%{$q}%")
-                    ->orWhere('gateway_reference', 'like', "%{$q}%");
+                $query->where(function ($nested) use ($q) {
+                    $nested->where('reference', 'like', "%{$q}%")
+                        ->orWhere('gateway_reference', 'like', "%{$q}%");
+                });
             })
             ->when($status, fn($query) => $query->where('status', $status))
             ->orderByDesc('id')

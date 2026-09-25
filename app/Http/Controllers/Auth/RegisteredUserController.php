@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
+use App\Models\Plan;
 use Illuminate\Validation\Rule;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -73,6 +74,11 @@ class RegisteredUserController extends Controller
                 'name' => $orgName,
                 'type' => $accountType,
                 'currency' => $request->input('currency', 'NGN'),
+                // New organizations start on the Free plan so plan-based
+                // filters and limits see truthful data (previously plan_id
+                // was left NULL and the UI papered over it with a "Free"
+                // fallback, which broke the owner plan filter).
+                'plan_id' => Plan::where('key', 'free')->value('id'),
             ]);
 
             // Attach user as owner

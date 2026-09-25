@@ -41,13 +41,20 @@ class CRMModuleTest extends TestCase
     public function test_can_create_property()
     {
         $this->withoutExceptionHandling();
+
+        $project = \App\Models\Project::create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Site Alpha',
+        ]);
+
         $response = $this->actingAs($this->user)
             ->post(route('crm.properties.store'), [
                 'name' => 'Sunset Apartments',
                 'address' => '123 Sunset Blvd',
                 'type' => 'residential',
                 'status' => 'ready',
-                'units_count' => 10,
+                'project_id' => $project->id,
+                'total_units' => 10,
             ]);
 
         $response->assertRedirect();
@@ -55,6 +62,8 @@ class CRMModuleTest extends TestCase
             'organization_id' => $this->organization->id,
             'name' => 'Sunset Apartments',
             'type' => 'residential',
+            'project_id' => $project->id,
+            'total_units' => 10,
         ]);
     }
 

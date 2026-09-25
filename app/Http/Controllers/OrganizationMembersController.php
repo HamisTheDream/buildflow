@@ -8,6 +8,7 @@ use App\Mail\OrganizationInviteMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -112,7 +113,20 @@ class OrganizationMembersController extends Controller
 
         $invite->load('organization');
 
-        Mail::to($invite->email)->send(new OrganizationInviteMail($invite));
+        try {
+            Mail::to($invite->email)->send(new OrganizationInviteMail($invite));
+        } catch (\Throwable $e) {
+            // The invite record is already committed; a mail transport
+            // failure must not turn into a 500. Surface the invite link so
+            // the inviter can share it manually.
+            Log::warning('Organization invite email failed', [
+                'invite_id' => $invite->id,
+                'email' => $invite->email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('warning', 'Invite created, but the email could not be sent. Copy the invite link and share it manually: ' . route('invites.show', $invite->token));
+        }
 
         return back()->with('success', 'Invite sent to ' . $invite->email . '.');
     }
@@ -136,7 +150,18 @@ class OrganizationMembersController extends Controller
         }
 
         $invite->load('organization');
-        Mail::to($invite->email)->send(new \App\Mail\OrganizationInviteMail($invite));
+
+        try {
+            Mail::to($invite->email)->send(new \App\Mail\OrganizationInviteMail($invite));
+        } catch (\Throwable $e) {
+            Log::warning('Organization invite resend failed', [
+                'invite_id' => $invite->id,
+                'email' => $invite->email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('warning', 'The email could not be sent. Copy the invite link and share it manually: ' . route('invites.show', $invite->token));
+        }
 
         return back()->with('success', 'Invite resent.');
     }
