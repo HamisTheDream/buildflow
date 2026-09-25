@@ -56,20 +56,6 @@ class ProjectController extends Controller
 
     public function store(\App\Http\Requests\StoreProjectRequest $request)
     {
-        // TEMPORARY DIAGNOSTIC (2026-09-25): the plan-limit path still 500s in
-        // production despite the fail-closed gate. Surface the real exception
-        // in the flash message so the browser probe can report it. REMOVE after
-        // root cause is identified.
-        try {
-            return $this->doStore($request);
-        } catch (\Throwable $e) {
-            report($e);
-            return back()->with('error', 'DEBUG-STORE ' . get_class($e) . ': ' . $e->getMessage());
-        }
-    }
-
-    private function doStore(\App\Http\Requests\StoreProjectRequest $request)
-    {
         Gate::authorize('create', Project::class);
 
         $org = $request->user()->currentOrganization;
@@ -89,19 +75,29 @@ class ProjectController extends Controller
             return back()->with('error', 'Your plan has reached the project limit. Upgrade to create more projects.');
         }
 
-        $data = $request->validated();
+        try {
+            $data = $request->validated();
 
-        $project = Project::create([
-            ...$data,
-            'organization_id' => $org->id,
-        ]);
+            // The request rule is nullable but the column is NOT NULL and the
+            // form's default is ₦0.00: coerce a missing budget instead of 500ing.
+            $data['budget'] = $data['budget'] ?? 0;
 
-        // Auto-add creator as project owner
-        $project->members()->syncWithoutDetaching([
-            $request->user()->id => ['role' => 'owner'],
-        ]);
+            $project = Project::create([
+                ...$data,
+                'organization_id' => $org->id,
+            ]);
 
-        \App\Http\Controllers\App\DashboardController::clearCache($org->id);
+            // Auto-add creator as project owner
+            $project->members()->syncWithoutDetaching([
+                $request->user()->id => ['role' => 'owner'],
+            ]);
+
+            \App\Http\Controllers\App\DashboardController::clearCache($org->id);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->withInput()->with('error', 'Could not create the project. Please try again or contact support if the problem persists.');
+        }
 
         return redirect()->route('projects.show', $project)->with('success', 'Project created.');
     }

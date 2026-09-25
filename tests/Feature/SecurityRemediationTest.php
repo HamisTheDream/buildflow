@@ -91,6 +91,30 @@ class SecurityRemediationTest extends TestCase
         );
     }
 
+    public function test_project_creation_without_budget_defaults_to_zero_instead_of_500()
+    {
+        // Trial orgs get unlimited projects from the usage gate, so the
+        // request reaches the INSERT: a missing budget must be coerced to 0
+        // (the form's default) rather than violating the NOT NULL column.
+        $trialOrg = Organization::factory()->create([
+            'subscription_status' => 'trial',
+            'trial_ends_at' => now()->addDays(14),
+            'plan_id' => $this->freePlan->id,
+        ]);
+        $this->user->organizations()->attach($trialOrg->id, ['role' => 'owner']);
+        $this->user->update(['current_organization_id' => $trialOrg->id]);
+
+        $response = $this->actingAs($this->user)->post('/app/projects', [
+            'name' => 'No Budget Project',
+            'status' => 'active',
+        ]);
+
+        $response->assertRedirect();
+        $project = Project::where('organization_id', $trialOrg->id)->first();
+        $this->assertNotNull($project);
+        $this->assertEquals(0, $project->budget);
+    }
+
     public function test_unverified_user_is_redirected_to_verification_notice()
     {
         $this->user->update(['email_verified_at' => null]);
