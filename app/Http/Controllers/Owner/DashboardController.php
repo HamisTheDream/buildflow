@@ -15,6 +15,7 @@ class DashboardController extends Controller
         // Global Metrics
         $totalRevenueCents = DB::table('payments')
             ->where('status', 'success')
+            ->whereNull('payments.deleted_at')
             ->sum('amount');
         
         $activeOrgs = Organization::where('subscription_status', 'active')->count();
@@ -23,6 +24,8 @@ class DashboardController extends Controller
             ->join('organizations', 'payments.organization_id', '=', 'organizations.id')
             ->select('payments.*', 'organizations.name as org_name')
             ->where('payments.status', 'success')
+            ->whereNull('payments.deleted_at')
+            ->whereNull('organizations.deleted_at')
             ->orderByDesc('payments.created_at')
             ->limit(5)
             ->get();

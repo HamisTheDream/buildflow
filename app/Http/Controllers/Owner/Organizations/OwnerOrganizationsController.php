@@ -56,6 +56,7 @@ class OwnerOrganizationsController extends Controller
             'active' => Organization::where('subscription_status', 'active')->count(),
             'trial' => Organization::where('subscription_status', 'trial')->count(),
             'expired' => Organization::whereIn('subscription_status', ['past_due', 'suspended', 'expired'])->count(),
+            'deleted' => Organization::onlyTrashed()->count(),
         ];
 
         return Inertia::render('Owner/Organizations/Index', [
@@ -67,6 +68,7 @@ class OwnerOrganizationsController extends Controller
             'plans' => $plans,
             'organizations' => $orgs,
             'metrics' => $metrics,
+            'isSuper' => (bool) Auth::guard('owner')->user()?->is_super,
         ]);
     }
 
@@ -123,7 +125,8 @@ class OwnerOrganizationsController extends Controller
                 NULL as admin_id, 
                 'payment' as source_table
             ")
-            ->where('organization_id', $orgId);
+            ->where('organization_id', $orgId)
+            ->whereNull('deleted_at');
 
         $timeline = $notesQuery
             ->union($auditsQuery)
@@ -422,5 +425,83 @@ class OwnerOrganizationsController extends Controller
         );
 
         return back()->with('success', 'CRM stage updated.');
+    }
+
+    /**
+     * List soft-deleted organizations (the trash).
+     */
+    public function trash(Request $request)
+    {
+        $orgs = Organization::onlyTrashed()
+            ->with(['plan:id,key,name'])
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(20)
+            ->appends($request->query());
+
+        return Inertia::render('Owner/Organizations/Trash', [
+            'organizations' => $orgs,
+        ]);
+    }
+
+    /**
+     * Soft-delete an organization and its entire database. Super Admin only.
+     * Rows are only timestamped — nothing is permanently removed and R2
+     * objects are left untouched.
+     */
+    public function destroy(Request $request, Organization $organization, AdminAudit $audit)
+    {
+        $admin = Auth::guard('owner')->user();
+        if (!$admin?->is_super) {
+            return back()->with('error', 'Only super admins can delete organizations.');
+        }
+
+        $before = $organization->only(['name', 'subscription_status', 'deleted_at']);
+        $organization->delete();
+        // deleted_at is set in memory by SoftDeletes; fresh() would miss the
+        // trashed row, so audit from the model itself.
+        $after = $organization->only(['name', 'subscription_status', 'deleted_at']);
+
+        $audit->log(
+            $admin->id,
+            'org.soft_delete',
+            $organization,
+            $before,
+            $after,
+            null,
+            $request->ip(),
+            substr((string)$request->userAgent(), 0, 512)
+        );
+
+        return redirect()->route('owner.organizations.index')
+            ->with('success', "Organization '{$organization->name}' moved to trash.");
+    }
+
+    /**
+     * Restore a soft-deleted organization together with all data that was
+     * cascade-deleted alongside it. Super Admin only.
+     */
+    public function restore(Request $request, int $id, AdminAudit $audit)
+    {
+        $admin = Auth::guard('owner')->user();
+        if (!$admin?->is_super) {
+            return back()->with('error', 'Only super admins can restore organizations.');
+        }
+
+        $organization = Organization::onlyTrashed()->findOrFail($id);
+        $organization->restore();
+
+        $audit->log(
+            $admin->id,
+            'org.restore',
+            $organization,
+            [],
+            $organization->only(['name', 'subscription_status', 'deleted_at']),
+            null,
+            $request->ip(),
+            substr((string)$request->userAgent(), 0, 512)
+        );
+
+        return redirect()->route('owner.organizations.index')
+            ->with('success', "Organization '{$organization->name}' restored.");
     }
 }

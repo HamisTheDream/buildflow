@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Announcement extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'title', 'body', 'tone', 'cta_text', 'cta_url',
         'is_active', 'is_global', 'plan_id', 'organization_id',

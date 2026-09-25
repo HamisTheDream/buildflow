@@ -3,9 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Concerns\CascadesSoftDeletes;
 
 class Payment extends Model
 {
+    use SoftDeletes, CascadesSoftDeletes;
+
+    protected array $cascadeSoftDeletes = ['notes'];
+
     protected $fillable = [
         'organization_id',
         'user_id',
@@ -48,5 +54,10 @@ class Payment extends Model
     public function invoice()
     {
         return $this->belongsTo(\App\Models\Finance\Invoice::class);
+    }
+
+    public function notes()
+    {
+        return $this->hasMany(PaymentNote::class);
     }
 }

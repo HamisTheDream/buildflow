@@ -111,7 +111,8 @@ class ProjectMediaController extends Controller
         Storage::disk($media->disk)->delete($media->path);
 
         $before = $media->replicate();
-        $media->delete();
+        // force: the R2 object is already gone; SoftDeletes must not leave a file-less row
+        $media->forceDelete();
 
         $activity->logModel($request, $project->organization_id, $project->id, $request->user()->id, 'deleted', 'media', $before, null);
 

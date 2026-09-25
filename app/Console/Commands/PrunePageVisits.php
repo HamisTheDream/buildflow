@@ -32,7 +32,7 @@ class PrunePageVisits extends Command
 
         $this->info("Pruning page visits older than {$days} days ({$date->toDateTimeString()})...");
 
-        $count = PageVisit::where('created_at', '<', $date)->delete();
+        $count = PageVisit::where('created_at', '<', $date)->forceDelete();
 
         $this->info("Successfully deleted {$count} old page visit records.");
         return Command::SUCCESS;

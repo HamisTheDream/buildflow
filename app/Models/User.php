@@ -48,6 +48,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(Organization::class, 'organization_user')
             ->withPivot(['role'])
+            ->wherePivotNull('organization_user.deleted_at')
             ->withTimestamps();
     }
 
@@ -116,6 +117,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(Project::class, 'project_members')
             ->withPivot(['role'])
+            ->wherePivotNull('project_members.deleted_at')
             ->withTimestamps();
     }
 }

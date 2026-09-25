@@ -23,6 +23,8 @@ class PaymentController extends Controller
                 $q->where('payments.reference', 'like', "%{$s}%")
                   ->orWhere('organizations.name', 'like', "%{$s}%");
             })
+            ->whereNull('payments.deleted_at')
+            ->whereNull('organizations.deleted_at')
             ->orderByDesc('payments.created_at')
             ->paginate(50);
 

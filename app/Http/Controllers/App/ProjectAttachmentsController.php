@@ -91,7 +91,8 @@ class ProjectAttachmentsController extends Controller
         $before = $attachment->replicate();
 
         Storage::disk($attachment->disk)->delete($attachment->path);
-        $attachment->delete();
+        // force: the R2 object is already gone; SoftDeletes must not leave a file-less row
+        $attachment->forceDelete();
 
         $activity->logModel(
             $request,

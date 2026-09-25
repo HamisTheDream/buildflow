@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SupportTicketNote extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['support_ticket_id', 'admin_id', 'user_id', 'note', 'is_public'];
 
     protected $casts = [

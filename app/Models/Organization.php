@@ -6,12 +6,28 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\OrganizationDeletionService;
 
 class Organization extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     protected static function booted()
     {
+        // Soft-delete / restore of the whole organization database is
+        // delegated to the dedicated service (transactional, ordered,
+        // R2-safe). Force deletes bypass it entirely.
+        static::deleted(function (Organization $org) {
+            if ($org->isForceDeleting()) {
+                return;
+            }
+            app(OrganizationDeletionService::class)->delete($org);
+        });
+
+        static::restoring(function (Organization $org) {
+            app(OrganizationDeletionService::class)->restore($org);
+        });
+
         static::creating(function ($org) {
             if (!$org->subscription_status) {
                 $org->subscription_status = 'trial';
@@ -71,6 +87,7 @@ class Organization extends Model
     {
         return $this->belongsToMany(User::class, 'organization_user')
             ->withPivot(['role'])
+            ->wherePivotNull('organization_user.deleted_at')
             ->withTimestamps();
     }
 
@@ -82,6 +99,91 @@ class Organization extends Model
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
+    }
+
+    public function crmTasks(): HasMany
+    {
+        return $this->hasMany(OrganizationTask::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
+    public function announcements(): HasMany
+    {
+        return $this->hasMany(Announcement::class);
+    }
+
+    public function supportTickets(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class);
+    }
+
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
+    }
+
+    public function deals(): HasMany
+    {
+        return $this->hasMany(Deal::class);
+    }
+
+    public function crmProperties(): HasMany
+    {
+        return $this->hasMany(CRM\Property::class);
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Finance\Invoice::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Finance\Expense::class);
+    }
+
+    public function budgets(): HasMany
+    {
+        return $this->hasMany(Finance\Budget::class);
+    }
+
+    public function departments(): HasMany
+    {
+        return $this->hasMany(HR\Department::class);
+    }
+
+    public function employees(): HasMany
+    {
+        return $this->hasMany(HR\Employee::class);
+    }
+
+    public function payrolls(): HasMany
+    {
+        return $this->hasMany(HR\Payroll::class);
+    }
+
+    public function leaves(): HasMany
+    {
+        return $this->hasMany(HR\Leave::class);
+    }
+
+    public function pageVisits(): HasMany
+    {
+        return $this->hasMany(PageVisit::class);
+    }
+
+    public function ownerDeals(): HasMany
+    {
+        return $this->hasMany(OwnerDeal::class);
     }
 
     public function plan(): \Illuminate\Database\Eloquent\Relations\BelongsTo

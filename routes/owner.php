@@ -42,7 +42,10 @@ Route::middleware('web')->group(function () {
         Route::post('/owner/support/{ticket}/reply', [OwnerSupportController::class, 'storeReply'])->name('owner.support.reply');
 
         Route::get('/owner/organizations', [\App\Http\Controllers\Owner\Organizations\OwnerOrganizationsController::class, 'index'])->name('owner.organizations.index');
+        Route::get('/owner/organizations/trash', [\App\Http\Controllers\Owner\Organizations\OwnerOrganizationsController::class, 'trash'])->name('owner.organizations.trash');
         Route::get('/owner/organizations/{organization}', [\App\Http\Controllers\Owner\Organizations\OwnerOrganizationsController::class, 'show'])->name('owner.organizations.show');
+        Route::delete('/owner/organizations/{organization}', [\App\Http\Controllers\Owner\Organizations\OwnerOrganizationsController::class, 'destroy'])->name('owner.organizations.destroy');
+        Route::post('/owner/organizations/{id}/restore', [\App\Http\Controllers\Owner\Organizations\OwnerOrganizationsController::class, 'restore'])->name('owner.organizations.restore');
 
         // actions
         Route::post('/owner/organizations/{organization}/extend-trial', [\App\Http\Controllers\Owner\Organizations\OwnerOrganizationsController::class, 'extendTrial'])->name('owner.organizations.extend_trial');

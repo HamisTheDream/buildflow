@@ -205,7 +205,8 @@ class ProjectReportsController extends Controller
         abort_unless($report->project_id === $project->id, 404);
 
         Storage::disk($report->pdf_disk)->delete($report->pdf_path);
-        $report->delete();
+        // force: the R2 object is already gone; SoftDeletes must not leave a file-less row
+        $report->forceDelete();
 
         return back()->with('success', 'Report deleted.');
     }

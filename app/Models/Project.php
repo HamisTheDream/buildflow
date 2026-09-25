@@ -5,9 +5,30 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Concerns\CascadesSoftDeletes;
 
 class Project extends Model
 {
+    use SoftDeletes, CascadesSoftDeletes;
+
+    /**
+     * Project-scoped children soft-deleted / restored with the project.
+     * Member pivots are soft-deleted by their own trait config.
+     */
+    protected array $cascadeSoftDeletes = [
+        'media',
+        'attachments',
+        'tasks',
+        'issues',
+        'dailyLogs',
+        'costs',
+        'units',
+        'reports',
+        'todayLogs',
+        'activityLogs',
+    ];
+
     protected $fillable = [
         'organization_id',
         'name',
@@ -38,6 +59,7 @@ class Project extends Model
     {
         return $this->belongsToMany(User::class, 'project_members')
             ->withPivot(['role'])
+            ->wherePivotNull('project_members.deleted_at')
             ->withTimestamps();
     }
 
@@ -90,5 +112,10 @@ class Project extends Model
     public function todayLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(TodayLog::class);
+    }
+
+    public function activityLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 }
