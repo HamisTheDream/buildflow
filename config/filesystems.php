@@ -17,6 +17,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Uploads Disk
+    |--------------------------------------------------------------------------
+    |
+    | Disk used for all user-uploaded files (project media, attachments,
+    | avatars, settings logos). Set UPLOADS_DISK=r2 in production so files
+    | survive redeploys on ephemeral containers; leave unset (public) for
+    | local development.
+    |
+    */
+
+    'uploads_disk' => env('UPLOADS_DISK', 'public'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -69,6 +83,7 @@ return [
             'url' => env('CLOUDFLARE_R2_URL'),
             'endpoint' => env('CLOUDFLARE_R2_ENDPOINT'),
             'use_path_style_endpoint' => false,
+            'visibility' => 'public',
             'throw' => false,
             'report' => false,
         ],

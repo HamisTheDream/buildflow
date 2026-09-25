@@ -62,12 +62,13 @@ class ProjectMediaController extends Controller
         $data = $request->validated();
 
         foreach ($request->file('files') as $file) {
-            $path = $file->store("projects/{$project->id}/media", 'public');
+            $disk = config('filesystems.uploads_disk');
+            $path = $file->store("projects/{$project->id}/media", $disk);
 
             $media = ProjectMedia::create([
                 'project_id' => $project->id,
                 'uploaded_by' => $request->user()->id,
-                'disk' => 'public',
+                'disk' => $disk,
                 'path' => $path,
                 'original_name' => $file->getClientOriginalName(),
                 'mime' => $file->getClientMimeType(),

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -20,7 +21,7 @@ class ProfileSettingsController extends Controller
                 'name' => $u->name,
                 'email' => $u->email,
                 'phone' => $u->phone,
-                'avatar_url' => $u->avatar_path ? asset('storage/' . $u->avatar_path) : null,
+                'avatar_url' => $u->avatar_path ? Storage::disk(config('filesystems.uploads_disk'))->url($u->avatar_path) : null,
             ],
         ]);
     }
@@ -58,7 +59,7 @@ class ProfileSettingsController extends Controller
         $u->email = strtolower($data['email']);
 
         if ($request->hasFile('avatar')) {
-            $path = $request->file('avatar')->store('avatars', 'public');
+            $path = $request->file('avatar')->store('avatars', config('filesystems.uploads_disk'));
             $u->avatar_path = $path;
         }
 

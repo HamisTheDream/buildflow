@@ -23,7 +23,7 @@
     });
     @endphp
     @if($site_icon)
-    <link rel="icon" href="{{ asset('storage/' . $site_icon) }}">
+    <link rel="icon" href="{{ \Illuminate\Support\Facades\Storage::disk(config('filesystems.uploads_disk'))->url($site_icon) }}">
     @else
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     @endif

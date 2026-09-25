@@ -50,7 +50,8 @@ class ProjectAttachmentsController extends Controller
         abort_unless((int)$attachable->project_id === (int)$project->id, 403);
 
         foreach ($request->file('files') as $file) {
-            $path = $file->store("projects/{$project->id}/attachments", 'public');
+            $disk = config('filesystems.uploads_disk');
+            $path = $file->store("projects/{$project->id}/attachments", $disk);
 
             $att = Attachment::create([
                 'organization_id' => (int)$project->organization_id,
@@ -58,7 +59,7 @@ class ProjectAttachmentsController extends Controller
                 'uploaded_by' => (int)$request->user()->id,
                 'attachable_type' => $attachableClass,
                 'attachable_id' => (int)$attachable->id,
-                'disk' => 'public',
+                'disk' => $disk,
                 'path' => $path,
                 'original_name' => $file->getClientOriginalName(),
                 'mime' => $file->getClientMimeType(),

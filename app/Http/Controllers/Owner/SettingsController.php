@@ -48,7 +48,7 @@ class SettingsController extends Controller
                 // Handle File Uploads (SEO Logo & Site Icon)
                 if (in_array($key, ['seo_logo', 'site_icon'])) {
                     if ($request->hasFile("settings.$key")) {
-                        $path = $request->file("settings.$key")->store('settings', 'public');
+                        $path = $request->file("settings.$key")->store('settings', config('filesystems.uploads_disk'));
                         $value = $path;
                     } elseif (!is_string($value)) {
                         // If it's not a new file and not a string (existing path), skip updates
