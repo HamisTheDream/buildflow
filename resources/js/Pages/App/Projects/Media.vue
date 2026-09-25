@@ -7,6 +7,7 @@ import Pagination from '@/Components/Pagination.vue'
 import Badge from '@/Components/Badge.vue'
 import PermissionNotice from '@/Components/PermissionNotice.vue'
 import Modal from '@/Components/Modal.vue'
+import DangerButton from '@/Components/DangerButton.vue'
 import InputLabel from '@/Components/InputLabel.vue'
 import TextInput from '@/Components/TextInput.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
@@ -91,8 +92,16 @@ function openUrl(m:any) {
 
 const deleteForm = useForm({})
 
-function deleteFile(m: any) {
-    if (!confirm('Are you sure you want to delete this file? This cannot be undone.')) return
+const mediaToDelete = ref<any>(null)
+
+function askDelete(m: any) {
+    mediaToDelete.value = m
+}
+
+function confirmDelete() {
+    const m = mediaToDelete.value
+    mediaToDelete.value = null
+    if (!m) return
     deleteForm.delete(`/app/projects/${project.value.id}/media/${m.id}`, {
         preserveScroll: true,
     })
@@ -170,7 +179,7 @@ function deleteFile(m: any) {
                 <a :href="openUrl(m)" target="_blank" class="text-xs font-medium text-brand-600">View File &rarr;</a>
                 <button
                   v-if="canManage"
-                  @click="deleteFile(m)"
+                  @click="askDelete(m)"
                   :disabled="deleteForm.processing"
                   class="text-xs font-medium text-red-600 hover:text-red-800 disabled:opacity-50"
                 >
@@ -220,6 +229,22 @@ function deleteFile(m: any) {
                     <PrimaryButton type="submit" :disabled="form.processing">Upload</PrimaryButton>
                 </div>
             </form>
+        </div>
+    </Modal>
+
+    <!-- Delete Confirmation Modal -->
+    <Modal :show="!!mediaToDelete" @close="mediaToDelete = null">
+        <div class="p-6">
+            <h2 class="text-lg font-medium text-gray-900">Delete file?</h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Are you sure you want to delete
+                <span class="font-medium text-gray-900">{{ mediaToDelete?.original_name || 'this file' }}</span>?
+                This cannot be undone.
+            </p>
+            <div class="mt-6 flex justify-end gap-2">
+                <SecondaryButton @click="mediaToDelete = null">Cancel</SecondaryButton>
+                <DangerButton @click="confirmDelete" :disabled="deleteForm.processing">Delete</DangerButton>
+            </div>
         </div>
     </Modal>
   </ProjectLayout>

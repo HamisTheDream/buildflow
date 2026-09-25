@@ -62,6 +62,30 @@ class AppServiceProvider extends ServiceProvider
 
         // Configure rate limiters
         $this->configureRateLimiting();
+
+        // Ensure the public/storage symlink exists. PaaS builders (e.g. Koyeb
+        // buildpacks) never run `php artisan storage:link`, so every
+        // /storage/* URL 404s until the link is created. Self-heal at boot.
+        $this->ensurePublicStorageLink();
+    }
+
+    /**
+     * Create the public/storage symlink when it is missing.
+     */
+    protected function ensurePublicStorageLink(): void
+    {
+        $link = public_path('storage');
+
+        if (is_link($link) || file_exists($link)) {
+            return;
+        }
+
+        try {
+            app('files')->ensureDirectoryExists(storage_path('app/public'));
+            app('files')->link(storage_path('app/public'), $link);
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     /**
