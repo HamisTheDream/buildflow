@@ -25,7 +25,20 @@ namespace App\Models\Concerns;
  */
 trait CascadesSoftDeletes
 {
-    protected array $cascadeSoftDeletes = [];
+    /**
+     * Relations to cascade soft-deletes/restores through. Models declare:
+     *
+     *     protected array $cascadeSoftDeletes = ['relation', ...];
+     *
+     * (The property lives on the model, not the trait: redefining a trait
+     * property with a different default is a fatal error in PHP.)
+     */
+    protected function cascadeSoftDeleteRelations(): array
+    {
+        return isset($this->cascadeSoftDeletes) && is_array($this->cascadeSoftDeletes)
+            ? $this->cascadeSoftDeletes
+            : [];
+    }
 
     protected static function bootCascadesSoftDeletes(): void
     {
@@ -43,7 +56,7 @@ trait CascadesSoftDeletes
 
     public function cascadeSoftDeleteChildren(): void
     {
-        foreach ($this->cascadeSoftDeletes as $relation) {
+        foreach ($this->cascadeSoftDeleteRelations() as $relation) {
             $this->{$relation}()->reorder()->chunkById(500, function ($children) {
                 foreach ($children as $child) {
                     $child->delete();
@@ -54,7 +67,7 @@ trait CascadesSoftDeletes
 
     public function cascadeRestoreChildren($deletedAt): void
     {
-        foreach ($this->cascadeSoftDeletes as $relation) {
+        foreach ($this->cascadeSoftDeleteRelations() as $relation) {
             $query = $this->{$relation}()->withTrashed()->reorder();
             if ($deletedAt) {
                 $query->where('deleted_at', '>=', $deletedAt);
