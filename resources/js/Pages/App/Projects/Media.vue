@@ -62,6 +62,14 @@ function submit() {
     })
 }
 
+// Laravel reports per-file failures as `files.0`, `files.1`, ... — collect
+// every files-related error so rejections are never silently swallowed.
+const fileErrors = computed(() => {
+    return Object.entries(form.errors)
+        .filter(([key]) => key === 'files' || key.startsWith('files.'))
+        .map(([, msg]) => msg as string)
+})
+
 function kindTone(k: string) {
   const v = (k || '').toLowerCase()
   if (v.includes('image')) return 'blue'
@@ -181,7 +189,9 @@ function openUrl(m:any) {
                         file:bg-brand-50 file:text-brand-700
                         hover:file:bg-brand-100"
                     />
-                    <div v-if="form.errors.files" class="mt-1.5 text-sm text-red-600">{{ form.errors.files }}</div>
+                    <div v-if="fileErrors.length" class="mt-1.5 space-y-1">
+                        <div v-for="(err, i) in fileErrors" :key="i" class="text-sm text-red-600">{{ err }}</div>
+                    </div>
                 </div>
 
                 <div>
