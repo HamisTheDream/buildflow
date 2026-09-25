@@ -92,7 +92,14 @@ class RegisteredUserController extends Controller
             return $user;
         });
 
-        event(new Registered($user));
+        // The Registered event triggers the verification email. Mail delivery is
+        // best-effort here: if SMTP is down we must not break signup — the user
+        // lands on the verification notice page and can resend from there.
+        try {
+            event(new Registered($user));
+        } catch (\Throwable $e) {
+            report($e);
+        }
         Auth::login($user);
 
         return redirect()->route('app.dashboard');

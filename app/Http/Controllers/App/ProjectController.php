@@ -59,9 +59,19 @@ class ProjectController extends Controller
         Gate::authorize('create', Project::class);
 
         $org = $request->user()->currentOrganization;
-        $gate = app(\App\Services\UsageService::class)->withinLimits($org);
 
-        if (!$gate['can']['create_project']) {
+        // Fail closed: if the usage/plan gate cannot be evaluated for any
+        // reason, treat the project as over-limit rather than 500ing. The
+        // exception is still reported so the root cause can be fixed.
+        $canCreateProject = false;
+        try {
+            $gate = app(\App\Services\UsageService::class)->withinLimits($org);
+            $canCreateProject = (bool) ($gate['can']['create_project'] ?? false);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        if (!$canCreateProject) {
             return back()->with('error', 'Your plan has reached the project limit. Upgrade to create more projects.');
         }
 

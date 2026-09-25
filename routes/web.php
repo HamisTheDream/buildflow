@@ -69,8 +69,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/app/support/{ticket}', [App\Http\Controllers\App\Support\SupportTicketController::class, 'show'])->name('app.support.show');
     Route::post('/app/support/{ticket}/reply', [App\Http\Controllers\App\Support\SupportTicketController::class, 'storeReply'])->name('app.support.reply');
 
-    // Protected App Routes (Enforce Subscription)
-    Route::middleware([\App\Http\Middleware\EnsureOrgHasAccess::class])->group(function () {
+    // Protected App Routes (Enforce Subscription + verified email)
+    Route::middleware([\App\Http\Middleware\EnsureOrgHasAccess::class, 'verified'])->group(function () {
         Route::get('/app/dashboard', App\Http\Controllers\App\DashboardController::class)->name('app.dashboard');
 
         Route::get('/dashboard', function () {

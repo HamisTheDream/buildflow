@@ -11,13 +11,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust the Cloudflare/Koyeb ingress proxies so $request->ip() returns the
+        // real client IP. Without this, all requests appear to come from the proxy
+        // and IP-based throttling (login brute-force protection, rate limiters)
+        // cannot distinguish clients.
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
             \App\Http\Middleware\TrackVisitors::class,
             \App\Http\Middleware\TrackPageVisits::class,
             \App\Http\Middleware\BlockBots::class,
-            // \App\Http\Middleware\ContentSecurityPolicy::class, // Temporarily disabled for debugging
+            \App\Http\Middleware\ContentSecurityPolicy::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [

@@ -91,6 +91,9 @@ class InviteAcceptanceController extends Controller
             'phone' => $data['phone'] ?? null,
             'password' => Hash::make($data['password']),
             'is_invited_only' => true,
+            // The invite token was delivered to this email address, so accepting
+            // the invite proves ownership of the address.
+            'email_verified_at' => now(),
         ]);
 
         // Attach membership
