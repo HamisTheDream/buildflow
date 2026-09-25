@@ -70,7 +70,7 @@ class HRModuleTest extends TestCase
                 'payment_frequency' => 'monthly',
             ]);
 
-        $response->assertRedirect(route('hr.employees.index'));
+        $response->assertRedirect(route('hr.dashboard'));
         $this->assertDatabaseHas('employees', [
             'first_name' => 'John',
             'last_name' => 'Doe',
@@ -105,7 +105,7 @@ class HRModuleTest extends TestCase
                 ],
             ]);
 
-        $response->assertRedirect(route('hr.payroll.index'));
+        $response->assertRedirect(route('hr.dashboard'));
         $this->assertDatabaseHas('payrolls', [
             'organization_id' => $this->organization->id,
             'total_amount_cents' => 640000, // 6000 + 500 - 100 = 6400 * 100

@@ -19,7 +19,7 @@ class PropertyRequest extends FormRequest
             'status' => 'required|in:planning,construction,ready,sold_out',
             'address' => 'nullable|string',
             'project_id' => 'nullable|exists:projects,id',
-            'units_count' => 'integer|min:0',
+            'total_units' => 'integer|min:0',
         ];
     }
 }
