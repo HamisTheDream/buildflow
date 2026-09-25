@@ -101,11 +101,6 @@ class Organization extends Model
         return $this->hasMany(Project::class);
     }
 
-    public function crmTasks(): HasMany
-    {
-        return $this->hasMany(OrganizationTask::class);
-    }
-
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
