@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Admin;
+use App\Models\CRM\Property;
 use App\Models\Finance\Budget;
 use App\Models\Finance\Expense;
 use App\Models\Organization;
@@ -78,6 +79,41 @@ class QaRegressionTest extends TestCase
             'project_id' => $project->id,
             'total_units' => 10,
         ]);
+    }
+
+    public function test_property_detail_page_loads()
+    {
+        $this->withoutExceptionHandling();
+
+        $property = Property::create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Sunset Apartments',
+            'type' => 'residential',
+            'status' => 'ready',
+            'total_units' => 10,
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->get(route('crm.properties.show', $property));
+
+        $response->assertOk();
+    }
+
+    public function test_property_edit_route_is_not_registered()
+    {
+        // The resource intentionally exposes only create/store/show; edit/update
+        // have no controller methods, so the edit URL must 404, never 500.
+        $property = Property::create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Sunset Apartments',
+            'type' => 'residential',
+            'status' => 'ready',
+            'total_units' => 10,
+        ]);
+
+        $this->actingAs($this->user)
+            ->get("/app/crm/properties/{$property->id}/edit")
+            ->assertNotFound();
     }
 
     public function test_finance_dashboard_loads_with_expenses_and_budgets()

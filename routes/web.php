@@ -160,7 +160,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::resource('app/crm/properties', \App\Http\Controllers\CRM\PropertyController::class)
             ->names('crm.properties')
-            ->except(['index']);
+            ->only(['create', 'store', 'show']);
 
         Route::get('app/crm/properties/{property}/units/create', [\App\Http\Controllers\CRM\PropertyUnitController::class, 'create'])
             ->name('crm.properties.units.create');

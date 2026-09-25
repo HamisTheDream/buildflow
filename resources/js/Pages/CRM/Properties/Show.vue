@@ -56,7 +56,7 @@ const unitStatusColors: Record<string, string> = {
             <div class="flex items-center justify-between">
                 <div>
                      <div class="flex items-center gap-3">
-                        <Link :href="route('crm.properties.index')" class="text-sm text-gray-500 hover:text-gray-700">Properties</Link>
+                        <Link :href="route('crm.dashboard', { tab: 'inventory' })" class="text-sm text-gray-500 hover:text-gray-700">Properties</Link>
                         <span class="text-gray-400">/</span>
                         <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ property.name }}</h2>
                          <span 
