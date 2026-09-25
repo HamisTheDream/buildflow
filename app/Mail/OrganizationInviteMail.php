@@ -4,13 +4,16 @@ namespace App\Mail;
 
 use App\Models\OrganizationInvite;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class OrganizationInviteMail extends Mailable implements ShouldQueue
+// NOTE: intentionally NOT implementing ShouldQueue. Koyeb runs no queue
+// worker, so a queued invite mail would sit in the jobs table forever and
+// never send. The controller already try/catches Mail::send() and falls back
+// to a copyable invite link. Revisit if a worker service is added.
+class OrganizationInviteMail extends Mailable
 {
     use Queueable, SerializesModels;
 
