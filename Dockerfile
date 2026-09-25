@@ -23,6 +23,9 @@ COPY --from=node_builder --chown=www-data:www-data /app/public/build /var/www/ht
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
+# Link public storage so uploaded files are servable via /storage/*
+RUN php artisan storage:link
+
 # Expose port (Koyeb uses 8000 by default or 80, serversideup listens on 8080 by default for non-root)
 # We can set ENV variables to control this.
 ENV PHP_OPCACHE_ENABLE=1

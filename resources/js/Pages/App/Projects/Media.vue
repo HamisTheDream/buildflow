@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Link, usePage, Head, useForm } from '@inertiajs/vue3'
-
 import ProjectLayout from '@/Layouts/ProjectLayout.vue'
 import EmptyState from '@/Components/EmptyState.vue'
 import Pagination from '@/Components/Pagination.vue'
@@ -89,6 +88,15 @@ function thumbUrl(m:any) {
 function openUrl(m:any) {
   return m.url || m.download_url || m.public_url || '#'
 }
+
+const deleteForm = useForm({})
+
+function deleteFile(m: any) {
+    if (!confirm('Are you sure you want to delete this file? This cannot be undone.')) return
+    deleteForm.delete(`/app/projects/${project.value.id}/media/${m.id}`, {
+        preserveScroll: true,
+    })
+}
 </script>
 
 <template>
@@ -124,15 +132,13 @@ function openUrl(m:any) {
         </div>
 
         <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <a
+          <div
             v-for="m in media"
             :key="m.id"
-            :href="openUrl(m)"
-            target="_blank"
             class="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all hover:shadow-lg"
           >
-            <!-- Thumbnail -->
-             <div class="aspect-video w-full bg-gray-100 relative overflow-hidden">
+            <!-- Thumbnail (click to view) -->
+             <a :href="openUrl(m)" target="_blank" class="block aspect-video w-full bg-gray-100 relative overflow-hidden">
                  <img
                     v-if="thumbUrl(m)"
                     :src="thumbUrl(m)"
@@ -142,12 +148,12 @@ function openUrl(m:any) {
                   <div v-else class="flex h-full items-center justify-center text-gray-400">
                        <svg class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                   </div>
-                  
+
                   <!-- Overlay Type Badge -->
                   <div class="absolute top-2 right-2">
                        <Badge :text="formatEnum(fileKind(m))" :tone="kindTone(fileKind(m)) as any" size="sm" class="shadow-sm border-0" />
                   </div>
-             </div>
+             </a>
 
              <!-- Info -->
             <div class="flex flex-1 flex-col p-4">
@@ -159,11 +165,19 @@ function openUrl(m:any) {
                </p>
                <p class="mt-1 text-xs text-gray-500">{{ formatDateTime(m.created_at) }}</p>
             </div>
-            
-            <div class="bg-gray-50 px-4 py-2 text-xs font-medium text-brand-600 group-hover:bg-brand-50 transition-colors">
-                View File &rarr;
+
+            <div class="flex items-center justify-between bg-gray-50 px-4 py-2 transition-colors group-hover:bg-brand-50">
+                <a :href="openUrl(m)" target="_blank" class="text-xs font-medium text-brand-600">View File &rarr;</a>
+                <button
+                  v-if="canManage"
+                  @click="deleteFile(m)"
+                  :disabled="deleteForm.processing"
+                  class="text-xs font-medium text-red-600 hover:text-red-800 disabled:opacity-50"
+                >
+                  Delete
+                </button>
             </div>
-          </a>
+          </div>
         </div>
 
         <div v-if="links" class="mt-6">
