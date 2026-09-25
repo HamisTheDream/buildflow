@@ -9,6 +9,7 @@ use App\Models\Plan;
 use App\Services\AdminAudit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class OwnerOrganizationsController extends Controller
@@ -456,7 +457,9 @@ class OwnerOrganizationsController extends Controller
         }
 
         $before = $organization->only(['name', 'subscription_status', 'deleted_at']);
-        $organization->delete();
+        // Wrap in a transaction so a cascade failure rolls back the
+        // organization's own deleted_at too (no half-deleted state).
+        DB::transaction(fn () => $organization->delete());
         // deleted_at is set in memory by SoftDeletes; fresh() would miss the
         // trashed row, so audit from the model itself.
         $after = $organization->only(['name', 'subscription_status', 'deleted_at']);
@@ -488,7 +491,9 @@ class OwnerOrganizationsController extends Controller
         }
 
         $organization = Organization::onlyTrashed()->findOrFail($id);
-        $organization->restore();
+        // Transactional for the same reason as destroy(): a cascade failure
+        // must not leave the organization restored without its data.
+        DB::transaction(fn () => $organization->restore());
 
         $audit->log(
             $admin->id,

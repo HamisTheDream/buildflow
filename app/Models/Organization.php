@@ -123,12 +123,12 @@ class Organization extends Model
 
     public function leads(): HasMany
     {
-        return $this->hasMany(Lead::class);
+        return $this->hasMany(CRM\Lead::class);
     }
 
     public function deals(): HasMany
     {
-        return $this->hasMany(Deal::class);
+        return $this->hasMany(CRM\Deal::class);
     }
 
     public function crmProperties(): HasMany
