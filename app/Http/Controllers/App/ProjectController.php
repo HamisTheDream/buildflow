@@ -56,6 +56,20 @@ class ProjectController extends Controller
 
     public function store(\App\Http\Requests\StoreProjectRequest $request)
     {
+        // TEMPORARY DIAGNOSTIC (2026-09-25): the plan-limit path still 500s in
+        // production despite the fail-closed gate. Surface the real exception
+        // in the flash message so the browser probe can report it. REMOVE after
+        // root cause is identified.
+        try {
+            return $this->doStore($request);
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->with('error', 'DEBUG-STORE ' . get_class($e) . ': ' . $e->getMessage());
+        }
+    }
+
+    private function doStore(\App\Http\Requests\StoreProjectRequest $request)
+    {
         Gate::authorize('create', Project::class);
 
         $org = $request->user()->currentOrganization;
