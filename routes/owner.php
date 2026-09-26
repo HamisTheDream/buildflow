@@ -47,11 +47,6 @@ Route::middleware('web')->group(function () {
         Route::delete('/owner/organizations/{organization}', [\App\Http\Controllers\Owner\Organizations\OwnerOrganizationsController::class, 'destroy'])->name('owner.organizations.destroy');
         Route::post('/owner/organizations/{id}/restore', [\App\Http\Controllers\Owner\Organizations\OwnerOrganizationsController::class, 'restore'])->name('owner.organizations.restore');
 
-        // TEMPORARY maintenance routes — one-off 2026-09-26 cleanup. Remove after use.
-        // GET (not POST) so they can be triggered by simple navigation; still behind owner auth.
-        Route::get('/owner/maintenance/test-mail', [\App\Http\Controllers\Owner\TempMaintenanceController::class, 'testMail'])->name('owner.maintenance.test_mail');
-        Route::get('/owner/maintenance/delete-stale-test-users', [\App\Http\Controllers\Owner\TempMaintenanceController::class, 'deleteStaleTestUsers'])->name('owner.maintenance.delete_stale_test_users');
-
         // actions
         Route::post('/owner/organizations/{organization}/extend-trial', [\App\Http\Controllers\Owner\Organizations\OwnerOrganizationsController::class, 'extendTrial'])->name('owner.organizations.extend_trial');
         Route::post('/owner/organizations/{organization}/comp-plan', [\App\Http\Controllers\Owner\Organizations\OwnerOrganizationsController::class, 'compPlan'])->name('owner.organizations.comp_plan');
