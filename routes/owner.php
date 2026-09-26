@@ -48,8 +48,9 @@ Route::middleware('web')->group(function () {
         Route::post('/owner/organizations/{id}/restore', [\App\Http\Controllers\Owner\Organizations\OwnerOrganizationsController::class, 'restore'])->name('owner.organizations.restore');
 
         // TEMPORARY maintenance routes — one-off 2026-09-26 cleanup. Remove after use.
-        Route::post('/owner/maintenance/test-mail', [\App\Http\Controllers\Owner\TempMaintenanceController::class, 'testMail'])->name('owner.maintenance.test_mail');
-        Route::post('/owner/maintenance/delete-stale-test-users', [\App\Http\Controllers\Owner\TempMaintenanceController::class, 'deleteStaleTestUsers'])->name('owner.maintenance.delete_stale_test_users');
+        // GET (not POST) so they can be triggered by simple navigation; still behind owner auth.
+        Route::get('/owner/maintenance/test-mail', [\App\Http\Controllers\Owner\TempMaintenanceController::class, 'testMail'])->name('owner.maintenance.test_mail');
+        Route::get('/owner/maintenance/delete-stale-test-users', [\App\Http\Controllers\Owner\TempMaintenanceController::class, 'deleteStaleTestUsers'])->name('owner.maintenance.delete_stale_test_users');
 
         // actions
         Route::post('/owner/organizations/{organization}/extend-trial', [\App\Http\Controllers\Owner\Organizations\OwnerOrganizationsController::class, 'extendTrial'])->name('owner.organizations.extend_trial');
