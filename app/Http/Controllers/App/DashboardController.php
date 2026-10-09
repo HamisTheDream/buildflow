@@ -52,6 +52,7 @@ class DashboardController extends Controller
 
         // Cache key includes role and department to ensure correct data separation
         $cacheKey = "dashboard_stats_{$orgId}_{$orgRole}_" . ($department ?? 'none');
+        self::registerCacheKey($orgId, $cacheKey);
 
         $stats = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($org, $orgRole, $department) {
             return $this->computeStats($org, $orgRole, $department);
@@ -65,6 +66,7 @@ class DashboardController extends Controller
 
         // Chart data (cached separately, slightly longer TTL)
         $chartCacheKey = "dashboard_charts_{$orgId}_" . ($showFinance ? 'finance' : 'basic');
+        self::registerCacheKey($orgId, $chartCacheKey);
 
         $chartData = Cache::remember($chartCacheKey, 600, function () use ($orgId, $showFinance) {
             return $this->computeChartData($orgId, $showFinance);
@@ -239,9 +241,26 @@ class DashboardController extends Controller
         ];
     }
 
+    /**
+     * Track every dashboard cache key issued for an org so clearCache()
+     * can invalidate the real keys (they embed role/department suffixes).
+     */
+    private static function registerCacheKey(int $orgId, string $key): void
+    {
+        $indexKey = "dashboard_keys_{$orgId}";
+        $keys = Cache::get($indexKey, []);
+        if (!in_array($key, $keys, true)) {
+            $keys[] = $key;
+            Cache::put($indexKey, $keys, 3600);
+        }
+    }
+
     public static function clearCache(int $orgId): void
     {
-        Cache::forget("dashboard_stats_{$orgId}");
-        Cache::forget("dashboard_charts_{$orgId}");
+        $indexKey = "dashboard_keys_{$orgId}";
+        foreach (Cache::get($indexKey, []) as $key) {
+            Cache::forget($key);
+        }
+        Cache::forget($indexKey);
     }
 }
