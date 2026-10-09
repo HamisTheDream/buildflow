@@ -19,9 +19,11 @@ const form = useForm({
     bathrooms: '',
 });
 
+const submit = () => {
     form.post(route('crm.properties.units.store', props.property.id), {
         onSuccess: () => form.reset(),
     });
+};
 </script>
 
 <template>
