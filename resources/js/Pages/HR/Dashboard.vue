@@ -89,13 +89,28 @@ const submitLeave = () => {
     leaveForm.post(route('hr.leaves.store'), { onSuccess: () => { showLeaveModal.value = false; leaveForm.reset(); } });
 };
 const updateLeaveStatus = (leave: any, status: string) => {
-    if (confirm(`Mark leave as ${status}?`)) {
-        router.put(route('hr.leaves.update', leave.id), { status });
+    // Two-step inline confirmation (native confirm() is auto-dismissed by
+    // headless/automation browsers, making the button look dead).
+    pendingLeaveAction.value = { leaveId: leave.id, action: status };
+};
+const requestDeleteLeave = (id: number) => {
+    pendingLeaveAction.value = { leaveId: id, action: 'delete' };
+};
+const confirmLeaveAction = () => {
+    const pending = pendingLeaveAction.value;
+    if (!pending) return;
+    if (pending.action === 'delete') {
+        router.delete(route('hr.leaves.destroy', pending.leaveId), {
+            onFinish: () => { pendingLeaveAction.value = null; },
+        });
+    } else {
+        router.put(route('hr.leaves.update', pending.leaveId), { status: pending.action }, {
+            onFinish: () => { pendingLeaveAction.value = null; },
+        });
     }
 };
-const deleteLeave = (id: number) => {
-    if (confirm('Delete this leave request?')) { router.delete(route('hr.leaves.destroy', id)); }
-};
+const cancelLeaveAction = () => { pendingLeaveAction.value = null; };
+const pendingLeaveAction = ref<{ leaveId: number; action: string } | null>(null);
 </script>
 
 <template>
@@ -383,9 +398,16 @@ const deleteLeave = (id: number) => {
                                     </td>
                                     <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-2">
                                         <template v-if="leave.status === 'pending'">
-                                            <button type="button" @click="updateLeaveStatus(leave, 'approved')" class="text-emerald-600 hover:text-emerald-800">Approve</button>
-                                            <button type="button" @click="updateLeaveStatus(leave, 'rejected')" class="text-red-600 hover:text-red-800">Reject</button>
-                                            <button type="button" @click="deleteLeave(leave.id)" class="text-gray-400 hover:text-gray-600">Delete</button>
+                                            <template v-if="pendingLeaveAction?.leaveId === leave.id">
+                                                <span class="text-xs text-gray-500 mr-1">Confirm {{ pendingLeaveAction.action === 'delete' ? 'delete' : pendingLeaveAction.action }}?</span>
+                                                <button type="button" @click="confirmLeaveAction" class="text-emerald-600 hover:text-emerald-800 font-semibold">Yes</button>
+                                                <button type="button" @click="cancelLeaveAction" class="text-gray-400 hover:text-gray-600">No</button>
+                                            </template>
+                                            <template v-else>
+                                                <button type="button" @click="updateLeaveStatus(leave, 'approved')" class="text-emerald-600 hover:text-emerald-800">Approve</button>
+                                                <button type="button" @click="updateLeaveStatus(leave, 'rejected')" class="text-red-600 hover:text-red-800">Reject</button>
+                                                <button type="button" @click="requestDeleteLeave(leave.id)" class="text-gray-400 hover:text-gray-600">Delete</button>
+                                            </template>
                                         </template>
                                     </td>
                                 </tr>
