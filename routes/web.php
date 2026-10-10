@@ -198,6 +198,15 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('payroll', \App\Http\Controllers\HR\PayrollController::class)->only(['create', 'store', 'show']);
         Route::resource('leaves', \App\Http\Controllers\HR\LeaveController::class)->only(['store', 'update', 'destroy']);
     });
+
+    // Automations
+    Route::middleware(['auth', \App\Http\Middleware\EnsureOrgActiveAccess::class, 'org.access'])->prefix('app/automations')->name('automations.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\App\AutomationController::class, 'index'])->name('index');
+        Route::post('/{key}/toggle', [\App\Http\Controllers\App\AutomationController::class, 'toggle'])->name('toggle');
+        Route::post('/schedules', [\App\Http\Controllers\App\AutomationController::class, 'storeSchedule'])->name('schedules.store');
+        Route::patch('/schedules/{schedule}', [\App\Http\Controllers\App\AutomationController::class, 'updateSchedule'])->name('schedules.update');
+        Route::delete('/schedules/{schedule}', [\App\Http\Controllers\App\AutomationController::class, 'destroySchedule'])->name('schedules.destroy');
+    });
 });
 
 // Public share link (no auth)

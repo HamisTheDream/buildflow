@@ -60,6 +60,9 @@ class AppServiceProvider extends ServiceProvider
             \App\Listeners\SendWelcomeEmail::class,
         );
 
+        // Automation: lead auto-assignment + welcome email
+        \App\Models\CRM\Lead::observe(\App\Observers\LeadObserver::class);
+
         // Configure rate limiters
         $this->configureRateLimiting();
 
