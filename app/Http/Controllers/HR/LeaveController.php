@@ -30,6 +30,10 @@ class LeaveController extends Controller
             'status' => 'required|in:approved,rejected',
         ]);
 
+        // Diagnostic: check route parameters
+        $routeParams = $request->route()->parameters();
+        $routeParamNames = array_keys($routeParams);
+
         // Use direct DB update to ensure persistence (debugging Eloquent issue)
         $affected = \Illuminate\Support\Facades\DB::table('leaves')
             ->where('id', $leave->id)
@@ -40,7 +44,7 @@ class LeaveController extends Controller
             ]);
 
         // Diagnostic: include affected rows in message
-        $msg = 'Leave request updated. (ID: ' . $leave->id . ', affected: ' . $affected . ', status: ' . $validated['status'] . ')';
+        $msg = 'Leave updated. (route_params: ' . json_encode($routeParamNames) . ', leave_id: ' . ($leave->id ?? 'null') . ', affected: ' . $affected . ')';
 
         return redirect()->back()->with('success', $msg);
     }
