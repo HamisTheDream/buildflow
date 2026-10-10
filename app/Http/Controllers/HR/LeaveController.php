@@ -31,7 +31,7 @@ class LeaveController extends Controller
         ]);
 
         // Use direct DB update to ensure persistence (debugging Eloquent issue)
-        \Illuminate\Support\Facades\DB::table('leaves')
+        $affected = \Illuminate\Support\Facades\DB::table('leaves')
             ->where('id', $leave->id)
             ->update([
                 'status' => $validated['status'],
@@ -39,7 +39,10 @@ class LeaveController extends Controller
                 'updated_at' => now(),
             ]);
 
-        return redirect()->back()->with('success', 'Leave request updated.');
+        // Diagnostic: include affected rows in message
+        $msg = 'Leave request updated. (ID: ' . $leave->id . ', affected: ' . $affected . ', status: ' . $validated['status'] . ')';
+
+        return redirect()->back()->with('success', $msg);
     }
 
     public function destroy(Leave $leave)
