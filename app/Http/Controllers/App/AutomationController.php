@@ -15,24 +15,16 @@ class AutomationController extends Controller
     {
         // TEMP DEBUG: Remove after diagnosing 500
         try {
-            // Check migration state
+            // Try running migrations manually
+            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            $output = \Illuminate\Support\Facades\Artisan::output();
+
             $hasSettings = \Illuminate\Support\Facades\Schema::hasTable('automation_settings');
-            $hasLogs = \Illuminate\Support\Facades\Schema::hasTable('automation_logs');
-            $hasSchedules = \Illuminate\Support\Facades\Schema::hasTable('payment_schedules');
-            $migrations = \Illuminate\Support\Facades\DB::table('migrations')
-                ->where('migration', 'like', '%automation%')
-                ->pluck('migration');
 
             return response()->json([
-                'tables' => [
-                    'automation_settings' => $hasSettings,
-                    'automation_logs' => $hasLogs,
-                    'payment_schedules' => $hasSchedules,
-                ],
-                'migration_records' => $migrations,
+                'migrate_output' => $output,
+                'automation_settings_exists' => $hasSettings,
             ]);
-
-            return $this->indexInner();
         } catch (\Throwable $e) {
             return response()->json([
                 'error' => get_class($e),
