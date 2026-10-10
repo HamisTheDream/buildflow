@@ -26,14 +26,8 @@ RUN composer install --no-dev --optimize-autoloader
 # Link public storage so uploaded files are servable via /storage/*
 RUN php artisan storage:link
 
-# Copy and set up entrypoint (runs migrations on container start)
-COPY --chown=www-data:www-data docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
 # Expose port (Koyeb uses 8000 by default or 80, serversideup listens on 8080 by default for non-root)
 # We can set ENV variables to control this.
 ENV PHP_OPCACHE_ENABLE=1
 
 EXPOSE 8080
-
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

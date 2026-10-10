@@ -13,6 +13,8 @@ class AutomationController extends Controller
 {
     public function index()
     {
+        $this->ensureAutomationTables();
+
         $orgId = auth()->user()->current_organization_id;
 
         $settings = AutomationSetting::where('organization_id', $orgId)
@@ -49,6 +51,35 @@ class AutomationController extends Controller
             'recentLogs' => $recentLogs,
             'schedules' => $schedules,
         ]);
+    }
+
+    /**
+     * Self-healing: create automation tables if the migration never ran
+     * (e.g., deploy pipeline doesn't run `php artisan migrate`).
+     */
+    private function ensureAutomationTables(): void
+    {
+        if (\Illuminate\Support\Facades\Schema::hasTable('automation_settings')) {
+            return;
+        }
+
+        try {
+            $migration = require database_path('migrations/2026_10_10_000001_create_automation_tables.php');
+            $migration->up();
+
+            $exists = \Illuminate\Support\Facades\DB::table('migrations')
+                ->where('migration', '2026_10_10_000001_create_automation_tables')
+                ->exists();
+            if (! $exists) {
+                $batch = \Illuminate\Support\Facades\DB::table('migrations')->max('batch') ?? 0;
+                \Illuminate\Support\Facades\DB::table('migrations')->insert([
+                    'migration' => '2026_10_10_000001_create_automation_tables',
+                    'batch' => $batch + 1,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Automation tables auto-create failed: ' . $e->getMessage());
+        }
     }
 
     public function toggle(Request $request, string $key)
