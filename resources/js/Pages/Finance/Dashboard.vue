@@ -68,15 +68,28 @@ const expenseStatusColors: Record<string, string> = {
 };
 
 // ── Expense actions ──
+const pendingExpenseAction = ref<{ expenseId: number; action: string } | null>(null);
 const updateExpenseStatus = (expense: any, status: string) => {
-    if (confirm(`Mark expense as ${status}?`)) {
-        router.put(route('finance.expenses.update', expense.id), { status });
+    // Two-step inline confirmation (native confirm() is auto-dismissed by
+    // headless/automation browsers, making the button look dead).
+    pendingExpenseAction.value = { expenseId: expense.id, action: status };
+};
+const confirmExpenseAction = () => {
+    const pending = pendingExpenseAction.value;
+    if (!pending) return;
+    if (pending.action === 'delete') {
+        router.delete(route('finance.expenses.destroy', pending.expenseId), {
+            onFinish: () => { pendingExpenseAction.value = null; },
+        });
+    } else {
+        router.put(route('finance.expenses.update', pending.expenseId), { status: pending.action }, {
+            onFinish: () => { pendingExpenseAction.value = null; },
+        });
     }
 };
+const cancelExpenseAction = () => { pendingExpenseAction.value = null; };
 const deleteExpense = (expense: any) => {
-    if (confirm('Delete this expense?')) {
-        router.delete(route('finance.expenses.destroy', expense.id));
-    }
+    pendingExpenseAction.value = { expenseId: expense.id, action: 'delete' };
 };
 
 // ── Budget modal ──
@@ -300,11 +313,18 @@ const deleteBudget = (id: number) => {
                                     </td>
                                     <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-2">
                                         <a v-if="expense.receipt_path" :href="'/storage/' + expense.receipt_path" target="_blank" class="text-brand-600 hover:text-brand-800">Receipt</a>
-                                        <template v-if="expense.status === 'pending'">
-                                            <button type="button" @click="updateExpenseStatus(expense, 'approved')" class="text-emerald-600 hover:text-emerald-800">Approve</button>
-                                            <button type="button" @click="updateExpenseStatus(expense, 'rejected')" class="text-red-600 hover:text-red-800">Reject</button>
+                                        <template v-if="pendingExpenseAction?.expenseId === expense.id">
+                                            <span class="text-xs text-gray-500 mr-1">Confirm {{ pendingExpenseAction.action }}?</span>
+                                            <button type="button" @click="confirmExpenseAction" class="text-emerald-600 hover:text-emerald-800 font-semibold">Yes</button>
+                                            <button type="button" @click="cancelExpenseAction" class="text-gray-400 hover:text-gray-600">No</button>
                                         </template>
-                                        <button type="button" @click="deleteExpense(expense)" class="text-gray-400 hover:text-red-600">Delete</button>
+                                        <template v-else>
+                                            <template v-if="expense.status === 'pending'">
+                                                <button type="button" @click="updateExpenseStatus(expense, 'approved')" class="text-emerald-600 hover:text-emerald-800">Approve</button>
+                                                <button type="button" @click="updateExpenseStatus(expense, 'rejected')" class="text-red-600 hover:text-red-800">Reject</button>
+                                            </template>
+                                            <button type="button" @click="deleteExpense(expense)" class="text-gray-400 hover:text-red-600">Delete</button>
+                                        </template>
                                     </td>
                                 </tr>
                             </tbody>
