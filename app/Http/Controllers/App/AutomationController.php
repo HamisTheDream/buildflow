@@ -15,15 +15,16 @@ class AutomationController extends Controller
     {
         // TEMP DEBUG: Remove after diagnosing 500
         try {
-            // Try running migrations manually
-            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-            $output = \Illuminate\Support\Facades\Artisan::output();
-
             $hasSettings = \Illuminate\Support\Facades\Schema::hasTable('automation_settings');
+            $hasLogs = \Illuminate\Support\Facades\Schema::hasTable('automation_logs');
+            $hasSchedules = \Illuminate\Support\Facades\Schema::hasTable('payment_schedules');
 
             return response()->json([
-                'migrate_output' => $output,
-                'automation_settings_exists' => $hasSettings,
+                'tables' => [
+                    'automation_settings' => $hasSettings,
+                    'automation_logs' => $hasLogs,
+                    'payment_schedules' => $hasSchedules,
+                ],
             ]);
         } catch (\Throwable $e) {
             return response()->json([
