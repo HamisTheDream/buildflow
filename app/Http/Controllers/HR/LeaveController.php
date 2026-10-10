@@ -24,38 +24,27 @@ class LeaveController extends Controller
         return redirect()->back()->with('success', 'Leave request submitted.');
     }
 
-    public function update(Request $request, Leave $leave)
+    public function update(Request $request, Leave $leaf)
     {
         $validated = $request->validate([
             'status' => 'required|in:approved,rejected',
         ]);
 
-        // Diagnostic: check route parameters
-        $routeParams = $request->route()->parameters();
-        $routeParamNames = array_keys($routeParams);
+        $leaf->update([
+            'status' => $validated['status'],
+            'approved_by' => auth()->id(),
+        ]);
 
-        // Use direct DB update to ensure persistence (debugging Eloquent issue)
-        $affected = \Illuminate\Support\Facades\DB::table('leaves')
-            ->where('id', $leave->id)
-            ->update([
-                'status' => $validated['status'],
-                'approved_by' => auth()->id(),
-                'updated_at' => now(),
-            ]);
-
-        // Diagnostic: include affected rows in message
-        $msg = 'Leave updated. (route_params: ' . json_encode($routeParamNames) . ', leave_id: ' . ($leave->id ?? 'null') . ', affected: ' . $affected . ')';
-
-        return redirect()->back()->with('success', $msg);
+        return redirect()->back()->with('success', 'Leave request updated.');
     }
 
-    public function destroy(Leave $leave)
+    public function destroy(Leave $leaf)
     {
-        if ($leave->status !== 'pending') {
+        if ($leaf->status !== 'pending') {
             return redirect()->back()->with('error', 'Cannot delete processed leave request.');
         }
 
-        $leave->delete();
+        $leaf->delete();
         return redirect()->back()->with('success', 'Leave request deleted.');
     }
 }
