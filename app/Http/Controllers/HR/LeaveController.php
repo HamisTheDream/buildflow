@@ -30,10 +30,14 @@ class LeaveController extends Controller
             'status' => 'required|in:approved,rejected',
         ]);
 
-        $leave->update([
-            'status' => $validated['status'],
-            'approved_by' => auth()->id(),
-        ]);
+        // Use direct DB update to ensure persistence (debugging Eloquent issue)
+        \Illuminate\Support\Facades\DB::table('leaves')
+            ->where('id', $leave->id)
+            ->update([
+                'status' => $validated['status'],
+                'approved_by' => auth()->id(),
+                'updated_at' => now(),
+            ]);
 
         return redirect()->back()->with('success', 'Leave request updated.');
     }
