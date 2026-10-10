@@ -13,56 +13,6 @@ class AutomationController extends Controller
 {
     public function index()
     {
-        // TEMP DEBUG: Remove after diagnosing 500
-        try {
-            // Manually run the automation migration
-            $migrationFile = database_path('migrations/2026_10_10_000001_create_automation_tables.php');
-            $output = ['file_exists' => file_exists($migrationFile)];
-            
-            if (file_exists($migrationFile)) {
-                $migration = require $migrationFile;
-                $output['class'] = get_class($migration);
-                try {
-                    $migration->up();
-                    $output['up_result'] = 'success';
-                } catch (\Throwable $e) {
-                    $output['up_error'] = get_class($e) . ': ' . $e->getMessage();
-                }
-                
-                // Record in migrations table
-                $exists = \Illuminate\Support\Facades\DB::table('migrations')
-                    ->where('migration', '2026_10_10_000001_create_automation_tables')
-                    ->exists();
-                if (!$exists) {
-                    $batch = \Illuminate\Support\Facades\DB::table('migrations')->max('batch') ?? 0;
-                    \Illuminate\Support\Facades\DB::table('migrations')->insert([
-                        'migration' => '2026_10_10_000001_create_automation_tables',
-                        'batch' => $batch + 1,
-                    ]);
-                    $output['recorded'] = true;
-                }
-            }
-
-            $output['tables'] = [
-                'automation_settings' => \Illuminate\Support\Facades\Schema::hasTable('automation_settings'),
-                'automation_logs' => \Illuminate\Support\Facades\Schema::hasTable('automation_logs'),
-                'payment_schedules' => \Illuminate\Support\Facades\Schema::hasTable('payment_schedules'),
-            ];
-
-            return response()->json($output);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'error' => get_class($e),
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => collect($e->getTrace())->take(5)->map(fn($t) => ($t['class'] ?? '') . ($t['type'] ?? '') . ($t['function'] ?? ''))->values(),
-            ], 500);
-        }
-    }
-
-    private function indexInner()
-    {
         $orgId = auth()->user()->current_organization_id;
 
         $settings = AutomationSetting::where('organization_id', $orgId)
