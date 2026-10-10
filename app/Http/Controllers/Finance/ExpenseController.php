@@ -43,6 +43,8 @@ class ExpenseController extends Controller
             ...$data,
         ]);
 
+        \App\Http\Controllers\App\DashboardController::clearCache(auth()->user()->current_organization_id);
+
         return redirect()->route('finance.dashboard')->with('success', 'Expense recorded successfully.');
     }
 
@@ -53,6 +55,8 @@ class ExpenseController extends Controller
         ]);
 
         $expense->update($validated);
+
+        \App\Http\Controllers\App\DashboardController::clearCache($expense->organization_id);
 
         return redirect()->back()->with('success', 'Expense status updated.');
     }

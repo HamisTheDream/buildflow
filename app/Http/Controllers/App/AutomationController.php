@@ -13,6 +13,22 @@ class AutomationController extends Controller
 {
     public function index()
     {
+        // TEMP DEBUG: Remove after diagnosing 500
+        try {
+            return $this->indexInner();
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => get_class($e),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => collect($e->getTrace())->take(5)->map(fn($t) => ($t['class'] ?? '') . ($t['type'] ?? '') . ($t['function'] ?? ''))->values(),
+            ], 500);
+        }
+    }
+
+    private function indexInner()
+    {
         $orgId = auth()->user()->current_organization_id;
 
         $settings = AutomationSetting::where('organization_id', $orgId)

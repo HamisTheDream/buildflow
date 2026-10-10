@@ -48,6 +48,8 @@ class InvoiceController extends Controller
             ...$data,
         ]);
 
+        \App\Http\Controllers\App\DashboardController::clearCache($invoice->organization_id);
+
         return redirect()->route('finance.dashboard')->with('success', 'Invoice created successfully.');
     }
 
@@ -111,6 +113,8 @@ class InvoiceController extends Controller
             'method' => 'bank_transfer',
             'notes' => 'Marked as paid via BuildFlow.',
         ]);
+
+        \App\Http\Controllers\App\DashboardController::clearCache($invoice->organization_id);
 
         return back()->with('success', "Invoice {$invoice->number} marked as paid.");
     }

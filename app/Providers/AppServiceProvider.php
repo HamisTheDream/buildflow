@@ -39,6 +39,18 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
 
+        // Ensure the 'mail' view namespace is registered for <x-mail::*> components.
+        // (Defensive: MailServiceProvider should do this, but the hint was missing in production.)
+        try {
+            $reflector = new \ReflectionClass(\Illuminate\Mail\MailServiceProvider::class);
+            $mailViews = dirname($reflector->getFileName()) . '/resources/views';
+            if (is_dir($mailViews)) {
+                \Illuminate\Support\Facades\View::addNamespace('mail', $mailViews);
+            }
+        } catch (\Throwable $e) {
+            // Non-fatal: mail components just won't resolve.
+        }
+
         Vite::prefetch(concurrency: 3);
 
         Gate::policy(Project::class, ProjectPolicy::class);
