@@ -184,6 +184,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('invoices/{invoice}/pdf', [\App\Http\Controllers\Finance\InvoiceController::class, 'pdf'])->name('invoices.pdf');
         Route::post('invoices/{invoice}/email', [\App\Http\Controllers\Finance\InvoiceController::class, 'email'])->name('invoices.email');
+        Route::post('invoices/{invoice}/mark-paid', [\App\Http\Controllers\Finance\InvoiceController::class, 'markPaid'])->name('invoices.mark-paid');
         Route::resource('invoices', \App\Http\Controllers\Finance\InvoiceController::class)->except(['index', 'edit', 'update', 'destroy']);
         Route::resource('expenses', \App\Http\Controllers\Finance\ExpenseController::class)->except(['index', 'show', 'edit']);
         Route::resource('budgets', \App\Http\Controllers\Finance\BudgetController::class)->only(['store', 'destroy']);

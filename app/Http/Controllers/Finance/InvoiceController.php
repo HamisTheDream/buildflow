@@ -68,8 +68,7 @@ class InvoiceController extends Controller
     }
 
     public function email(Invoice $invoice)
-    {
-        // 1. Validate recipient
+    {        // 1. Validate recipient
         $recipientEmail = null;
         if ($invoice->clientUser) {
             $recipientEmail = $invoice->clientUser->email;
@@ -95,5 +94,24 @@ class InvoiceController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Failed to email invoice: ' . $e->getMessage());
         }
+    }
+
+    public function markPaid(Invoice $invoice)
+    {
+        if (! in_array($invoice->status, ['sent', 'overdue', 'draft'])) {
+            return back()->with('error', 'Only draft, sent or overdue invoices can be marked as paid.');
+        }
+
+        $invoice->update(['status' => 'paid']);
+
+        \App\Models\Finance\InvoicePayment::create([
+            'invoice_id' => $invoice->id,
+            'amount_cents' => $invoice->total_amount_cents,
+            'payment_date' => now()->toDateString(),
+            'method' => 'bank_transfer',
+            'notes' => 'Marked as paid via BuildFlow.',
+        ]);
+
+        return back()->with('success', "Invoice {$invoice->number} marked as paid.");
     }
 }

@@ -25,6 +25,8 @@ import { ref } from 'vue';
 
 const emailForm = useForm({});
 const confirmingEmail = ref(false);
+const paidForm = useForm({});
+const confirmingPaid = ref(false);
 
 const sendEmail = () => {
     confirmingEmail.value = true;
@@ -35,6 +37,15 @@ const submitEmail = () => {
         preserveScroll: true,
         onSuccess: () => {
             confirmingEmail.value = false;
+        }
+    });
+};
+
+const submitMarkPaid = () => {
+    paidForm.post(route('finance.invoices.mark-paid', props.invoice.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            confirmingPaid.value = false;
         }
     });
 };
@@ -107,6 +118,15 @@ const client = computed(() => {
                         class="rounded-md bg-brand-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:opacity-50"
                     >
                         {{ emailForm.processing ? 'Sending...' : 'Send Invoice' }}
+                    </button>
+                    <button
+                        v-if="['draft', 'sent', 'overdue'].includes(invoice.status)"
+                        type="button"
+                        @click="confirmingPaid = true"
+                        :disabled="paidForm.processing"
+                        class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:opacity-50"
+                    >
+                        {{ paidForm.processing ? 'Saving...' : 'Mark as Paid' }}
                     </button>
                 </div>
             </div>
@@ -200,6 +220,16 @@ const client = computed(() => {
             :processing="emailForm.processing"
             @close="confirmingEmail = false"
             @confirm="submitEmail"
+        />
+        <ConfirmationModal
+            :show="confirmingPaid"
+            title="Mark Invoice as Paid"
+            content="This will mark the invoice as paid and record a payment for the full invoice amount. Are you sure?"
+            confirm-text="Mark as Paid"
+            cancel-text="Cancel"
+            :processing="paidForm.processing"
+            @close="confirmingPaid = false"
+            @confirm="submitMarkPaid"
         />
     </AuthenticatedLayout>
 </template>
